@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+.DS_Store
+
+Release
+Debug
+.metadata/
+.settings/
+.cproject
+*Test.xml
+.*.html
