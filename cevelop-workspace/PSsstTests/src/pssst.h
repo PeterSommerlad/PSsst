@@ -1,6 +1,7 @@
 #ifndef SRC_PSSST_H_
 #define SRC_PSSST_H_
 /* PSSST Peter Sommerlad's Simple Strong Typing framework */
+// (c) copyright 2020 Peter Sommerlad : Better Software
 
 
 #include <cmath>

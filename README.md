@@ -29,11 +29,11 @@ There are two options to provide the type and position of the wrapped value:
 2. By just having a single public non-static member variable and inheriting just from the operations mix-ins.
    ```
    struct literPer100km : ops<literPer100km,Eq,Out> {
-   			double consuption;
+       double consuption;
    };
    ```
 
-The first option allows the type to remain an aggregate, where the first part of the aggregate is the only one required to be intialized. 
+The first option allows the type to remain an aggregate, where the first part of the aggregate is the only one required to be intialized: `literPer100km{8}`
 
-The second option makes using the class a bit of a hassle, because the empty base-class requires an empty pair of braces whenever one constructs a value of the type. 
+The second option makes using the class a bit of a hassle, because the empty base-class requires an empty pair of braces whenever one constructs a value of the type: `literPer100km{{},8}` 
 This extra pair of braces can be eliminated by providing a constructor in your class, but that is already boilerplate code I's like to reduce.
