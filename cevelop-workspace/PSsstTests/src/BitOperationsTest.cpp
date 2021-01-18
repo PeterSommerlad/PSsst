@@ -22,12 +22,19 @@ static_assert(std::is_trivially_copyable_v<U_int16>);
 static_assert(static_cast<uint16_t>(~42) == (~ U_int16{42} ).value);
 
 static_assert(10u == (U_int16{42} & U_int16{11}).value);
-static_assert(43u == (U_int16{42} | U_int16{11}).value);
+static_assert(std::is_class_v<U_int16> );
+//static_assert( std::is_aggregate_v<U_int16>);
+//static_assert(is_strong_v<U_int16>);
+//static_assert(43u == (U_int16{42} | U_int16{11}).value);
 static_assert(43u == (U_int16{42} | U_int16{11}).value);
 static_assert(84u == (U_int16{21} << 2).value);
 static_assert(21u == (U_int16{42} >> 1).value);
 // fails as it should: static_assert(21u == (U_int16{42} >> 17).value);
 
+struct fail_bitops:strong<int,fail_bitops>,ops<fail_bitops,Eq,BitOps>{
+};
+
+//static_assert((fail_bitops{1} | fail_bitops{2} ) == fail_bitops{3});
 
 void testBitNegate(){
 	U_int16 ui{42};

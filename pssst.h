@@ -37,7 +37,10 @@ struct bind2{
 //	template<typename ...B>
 //	using apply=T<A,B...>;
 //};
+
+
 }
+
 
 #ifndef NDEBUG
 #define pssst_assert(cond) detail__::throwing_assert((cond),#cond)
@@ -47,8 +50,8 @@ struct bind2{
 
 
 // apply multiple operator mix-ins and keep this an aggregate
-template <typename U, template <typename ...> class ...BS>
-struct ops:BS<U>...{};
+template <typename U, template <typename ...> class ...BASE>
+struct ops:BASE<U>...{};
 
 // Either use this as the first base of TAG or nothing
 template <typename V, typename TAG>
@@ -131,10 +134,13 @@ struct Eq{
 	operator==(U const &l, U const& r) noexcept {
 		auto const &[vl]=l;
 		auto const &[vr]=r;
-		return retval<Bool>(vl == vr);
+		return Bool(vl == vr);
 	}
+	// resurrect if the type Bool is not bool
 	friend constexpr Bool
-	operator!=(U const &l, U const& r) noexcept {
+	operator!=(U const &l, U const& r) noexcept
+	requires requires { not std::same_as<bool,Bool>;  }
+	{
 		return !(l==r);
 	}
 };
@@ -145,21 +151,59 @@ struct Order: Eq<U,Bool> {
 	operator<(U const &l, U const& r) noexcept {
 		auto const &[vl]=l;
 		auto const &[vr]=r;
-		return retval<Bool>(vl < vr);
+		return Bool(vl < vr);
 	}
+	// resurrect others if Bool is not bool
 	friend constexpr Bool
-	operator>(U const &l, U const& r) noexcept {
+	operator>(U const &l, U const& r) noexcept
+	requires requires { not std::same_as<bool,Bool>;  }
+	{
 		return r < l;
 	}
 	friend constexpr Bool
-	operator<=(U const &l, U const& r) noexcept {
+	operator<=(U const &l, U const& r) noexcept
+	requires requires { not std::same_as<bool,Bool>;  }
+	{
 		return !(r < l);
 	}
 	friend constexpr Bool
-	operator>=(U const &l, U const& r) noexcept {
+	operator>=(U const &l, U const& r) noexcept
+	requires requires { not std::same_as<bool,Bool>;  }
+	{
 		return !(l < r);
 	}
 };
+
+template <typename U, typename Other=U>
+struct Cmp3way
+{
+	// needs == and <=>, because we cannot default a mix-in
+	friend constexpr bool
+	operator==(U const &l, Other const& r) noexcept
+	requires std::is_class_v<U>
+	{
+		auto const &[vl]=l;
+		if constexpr(std::is_class_v<Other>){
+				auto const &[vr]=r;
+				return vl == vr;
+		} else {
+			return vl == r;
+		}
+	}
+	friend constexpr auto
+	operator<=>(U const &l, Other const& r) noexcept
+	requires std::is_class_v<U>
+	{
+		auto const &[vl]=l;
+		if constexpr(std::is_class_v<Other>){
+				auto const &[vr]=r;
+				return vl <=> vr;
+		} else {
+			return vl <=> r;
+		}
+	}
+};
+
 
 // unary plus and minus
 // plus only for completeness, because it is a no-op for strong types (no promotion)
@@ -216,7 +260,8 @@ struct Dec{
 template <typename R>
 struct BitOps {
 	friend constexpr R&
-	operator|=(R& l, R const &r) noexcept {
+	operator|=(R& l, R const &r) noexcept
+	{
 		auto &[vl]=l;
 		static_assert(std::is_unsigned_v<underlying_value_type<R>>,
 				"bitops are only be enabled for unsigned types");

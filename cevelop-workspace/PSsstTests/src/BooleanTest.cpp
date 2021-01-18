@@ -1,16 +1,23 @@
 #include "Boolean.h"
 #include "BooleanTest.h"
 #include "cute.h"
-#include <initializer_list>
+
+#include <cstddef>
 #include <utility>
 
 using namespace pssst;
+
 struct BoolTest {
 	constexpr static Bool const t { true };
 	constexpr static Bool const f { false };
 	void ConvertsTobool() const {
 		ASSERTM("true is true",                   t);
 	}
+    void ConvertsFromStreamIndirectlyOnly() const {
+      std::stringstream ss;
+      ASSERT(Bool{bool{ ss }});
+    }
+
 	void OperatorNot() const {
 		ASSERTM("not false is true",             !f);
 	}
@@ -71,6 +78,16 @@ struct BoolTest {
 		i = f? i : i + 1;
 		ASSERT_EQUAL(1,i);
 	}
+	void OperatorOrShortCut() const {
+      int i{};
+      t || ++i;
+      ASSERT_EQUAL(0,i);
+	}
+    void OperatorOrShortCutPass() const {
+      int i{};
+      f || ++i;
+      ASSERT_EQUAL(1,i);
+    }
 	void OperatorOrShortCutWithLambda() const {
 		int i{};
 		t || [&](){ return (++i);}; // obtain shortcut by passing a lambda returning convertible to bool
@@ -81,6 +98,16 @@ struct BoolTest {
 		f || [&](){ return (++i);};
 		ASSERT_EQUAL(1,i);
 	}
+    void OperatorAndShortCut() const {
+        int i{};
+        f && ++i;
+        ASSERT_EQUAL(0,i);
+    }
+    void OperatorAndShortCutPass() const {
+        int i{};
+        t && ++i;
+        ASSERT_EQUAL(1,i);
+    }
 	void OperatorAndShortCutWithLambda() const {
 		int i{};
 		f && [&](){ return (++i);};
@@ -91,27 +118,38 @@ struct BoolTest {
 		t && [&](){ return (++i);};
 		ASSERT_EQUAL(1,i);
 	}
-	void OperatorBuiltInOrShortCutWithCast() const {
-		int i{};
-		static_cast<bool>(t) || ++i; // select built-in || with cast to bool.
-		ASSERT_EQUAL(0,i);
-	}
-	void OperatorBuiltInOrShortCutWithCastPass() const {
-		int i{};
-		static_cast<bool>(f)  || ++i;
-		ASSERT_EQUAL(1,i);
-	}
-	void OperatorBuiltInAndShortCutWithCast() const {
-		int i{};
-		static_cast<bool>(f)  && ++i;
-		ASSERT_EQUAL(0,i);
-	}
-	void OperatorBuiltInAndShortCutWithCastPass() const {
-		int i{};
-		static_cast<bool>(t)  && ++i;
-		ASSERT_EQUAL(1,i);
-	}
 
+	struct Num:strong<int,Num>,Order<Num,Bool>{};
+
+	static_assert(Num{3} == Num{3});
+	static_assert(not(Num{3} != Num{3}));
+	static_assert(Num{3} <= Num{3});
+	static_assert(Num{3} >= Num{3});
+	static_assert(!(Num{3} < Num{3}));
+	static_assert(!(Num{3} > Num{3}));
+
+	struct Num3:strong<double,Num3>,ops<Num3,Cmp3way>{};
+	static_assert(Num3{3} == Num3{3});
+	static_assert(not(Num3{3} != Num3{3}));
+	static_assert(Num3{3} <= Num3{3});
+	static_assert(Num3{3} >= Num3{3});
+	static_assert(!(Num3{3} < Num3{3}));
+	static_assert(!(Num3{3} > Num3{3}));
+
+	struct NumX:strong<double,Num3>,ops<NumX,Cmp3way>,Cmp3way<NumX,Num3>{};
+	static_assert(NumX{3} == NumX{3});
+	static_assert(not(NumX{3} != NumX{3}));
+	static_assert(NumX{3} <= NumX{3});
+	static_assert(NumX{3} >= NumX{3});
+	static_assert(!(NumX{3} < NumX{3}));
+	static_assert(!(NumX{3} > NumX{3}));
+	// cross compare
+	static_assert(NumX{3} == Num3{3});
+	static_assert(not(Num3{3} != NumX{3}));
+	static_assert(Num3{3} <= NumX{3});
+	static_assert(NumX{3} >= Num3{3});
+	static_assert(!(Num3{3} < NumX{3}));
+	static_assert(!(NumX{3} > Num3{3}));
 
 	// check for no arithmetic conversion
 	template<typename FROM,typename=std::void_t<> >
@@ -123,7 +161,7 @@ struct BoolTest {
 	static_assert(BoolDoesNotConvertFrom<double>{});
 	static_assert(not BoolDoesNotConvertFrom<bool>{});
 	static_assert(not BoolDoesNotConvertFrom<int *>{});
-	static_assert(not BoolDoesNotConvertFrom<nullptr_t>{});
+	static_assert(not BoolDoesNotConvertFrom<std::nullptr_t>{});
 
 	template<typename WITH,typename=std::void_t<> >
 	struct BoolDoesNotAddWith:std::true_type{};
@@ -175,9 +213,10 @@ cute::suite make_suite_BooleanTest() {
 	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorAndShortCutWithLambda));
 	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorOrShortCutWithLambdaPass));
 	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorAndShortCutWithLambdaPass));
-	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorBuiltInOrShortCutWithCast));
-	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorBuiltInOrShortCutWithCastPass));
-	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorBuiltInAndShortCutWithCast));
-	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorBuiltInAndShortCutWithCastPass));
+	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorOrShortCut));
+	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorOrShortCutPass));
+	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorAndShortCut));
+	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorAndShortCutPass));
+	s.push_back(CUTE_SMEMFUN(BoolTest, ConvertsFromStreamIndirectlyOnly));
 	return s;
 }
