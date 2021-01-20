@@ -72,21 +72,21 @@ namespace {
 
 
 
-struct liter : ops<liter,Additive,Order,Out>{
-	// needs ctor to avoid need for extra {} below
-	constexpr explicit liter(double lit):l{lit}{};
-	double l{};
+struct literGas: ops<literGas, Additive, Order, Out> {
+  constexpr explicit literGas(double lit={}) : l{lit} {}
+  double l;
+  constexpr static inline auto suffix = " l";
 };
-static_assert(sizeof(liter)==sizeof(double)); // ensure empty bases are squashed
-static_assert(std::is_trivially_copyable_v<liter>); // ensure efficient argument passing
-static_assert(not needsbaseinit<liter>{},"does liter need base init?");
+static_assert(sizeof(literGas)==sizeof(double)); // ensure empty bases are squashed
+static_assert(std::is_trivially_copyable_v<literGas>); // ensure efficient argument passing
+static_assert(not needsbaseinit<literGas>{},"does liter need base init?");
 
 
 void testLiterWithoutStrong(){
-	liter l1 {43. };
-	liter l2 {42.1 };
-	l2 += liter{0.8};
-	ASSERT_EQUAL_DELTA(l1,l2,liter{0.11});
+	literGas l1 {43. };
+	literGas l2 {42.1 };
+	l2 += literGas{0.8};
+	ASSERT_EQUAL_DELTA(l1,l2,literGas{0.11});
 }
 }
 

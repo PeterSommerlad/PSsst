@@ -4,20 +4,15 @@
 #include "pssst.h"
 
 namespace pssst {
+namespace detail__ {
+  template<typename T>
+  concept non_numeric_convertible_to_bool =
+    std::constructible_from<bool,T>
+    && (std::is_class_v<std::remove_cv_t<std::remove_reference_t<T>>> || std::is_pointer_v<T>)
+    ;
+}
 // a better bool?
 struct Bool {
-  template<typename C> // requires is_invocable_r_v<bool,C const&>
-  friend constexpr
-  std::enable_if_t<std::is_invocable_r_v<bool, C const&>, Bool> operator ||(
-      Bool const &l, C const &r) {
-    return l ? l : Bool{static_cast<bool>(r())};
-  }
-  template<typename C> // requires is_invocable_r_v<bool,C const&>
-  friend constexpr
-  std::enable_if_t<std::is_invocable_r_v<bool, C const&>, Bool> operator &&(
-      Bool const &l, C const &r) {
-    return l ? Bool{static_cast<bool>(r())} : l;
-  }
   friend constexpr Bool operator !(Bool const &l) {
     return Bool{!l.val};
   }
@@ -32,17 +27,19 @@ struct Bool {
   constexpr Bool(bool const b) noexcept :
       val{b} {
   }
-  // convert from pointers
-  template<typename T>
-  constexpr Bool(T *const x) noexcept :
-      val{x != nullptr} {
-  }
-  constexpr Bool(std::nullptr_t) noexcept {
-  }
+  // nullptr_t is not a pointer
+  constexpr Bool(std::nullptr_t) noexcept :Bool{}{}
+  // allow contextual conversion to bool for class types and pointers
+  template<detail__::non_numeric_convertible_to_bool T>
+  constexpr
+  Bool(T&& x) noexcept :Bool(static_cast<bool>(x)){}
   // other implicit conversion attempts are not allowed
-  template<typename T>
-  constexpr Bool(T&& x) noexcept = delete;
-  // do not auto-convert anything else, explicit cast to bool required first
+  // do not auto-convert from numbers or enums,
+  // explicit cast to bool required first
+
+  // redundant:
+  //  template<typename T>
+  //  constexpr Bool(T&&) noexcept = delete;
 
   constexpr explicit operator bool() const noexcept {
     return val;

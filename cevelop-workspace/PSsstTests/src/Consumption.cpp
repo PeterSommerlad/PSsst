@@ -6,11 +6,10 @@
 
 using namespace pssst;
 
-struct literGas
-		: strong<double,literGas>
-		, ops<literGas,Additive,Order,Out>{
-			constexpr static inline auto  suffix=" l";
-		};
+struct literGas: strong<double, literGas>
+, ops<literGas, Additive, Order, Out> {
+  constexpr static inline auto suffix = " l";
+};
 
 struct kmDriven:strong<double,kmDriven>
 ,ScalarMultImpl<kmDriven,double>,Out<kmDriven>{

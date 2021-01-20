@@ -7,6 +7,11 @@
 
 using namespace pssst;
 
+
+
+static_assert(detail__::non_numeric_convertible_to_bool<std::stringstream&>);
+static_assert(! detail__::non_numeric_convertible_to_bool<std::nullptr_t>);
+
 struct BoolTest {
 	constexpr static Bool const t { true };
 	constexpr static Bool const f { false };
@@ -15,7 +20,7 @@ struct BoolTest {
 	}
     void ConvertsFromStreamIndirectlyOnly() const {
       std::stringstream ss;
-      ASSERT(Bool{bool{ ss }});
+      ASSERT(Bool(ss));
     }
 
 	void OperatorNot() const {
@@ -88,16 +93,16 @@ struct BoolTest {
       f || ++i;
       ASSERT_EQUAL(1,i);
     }
-	void OperatorOrShortCutWithLambda() const {
-		int i{};
-		t || [&](){ return (++i);}; // obtain shortcut by passing a lambda returning convertible to bool
-		ASSERT_EQUAL(0,i);
-	}
-	void OperatorOrShortCutWithLambdaPass() const {
-		int i{};
-		f || [&](){ return (++i);};
-		ASSERT_EQUAL(1,i);
-	}
+//	void OperatorOrShortCutWithLambda() const {
+//		int i{};
+//		t || [&](){ return (++i);}; // obtain shortcut by passing a lambda returning convertible to bool
+//		ASSERT_EQUAL(0,i);
+//	}
+//	void OperatorOrShortCutWithLambdaPass() const {
+//		int i{};
+//		f || [&](){ return (++i);};
+//		ASSERT_EQUAL(1,i);
+//	}
     void OperatorAndShortCut() const {
         int i{};
         f && ++i;
@@ -108,16 +113,16 @@ struct BoolTest {
         t && ++i;
         ASSERT_EQUAL(1,i);
     }
-	void OperatorAndShortCutWithLambda() const {
-		int i{};
-		f && [&](){ return (++i);};
-		ASSERT_EQUAL(0,i);
-	}
-	void OperatorAndShortCutWithLambdaPass() const {
-		int i{};
-		t && [&](){ return (++i);};
-		ASSERT_EQUAL(1,i);
-	}
+//	void OperatorAndShortCutWithLambda() const {
+//		int i{};
+//		f && [&](){ return (++i);};
+//		ASSERT_EQUAL(0,i);
+//	}
+//	void OperatorAndShortCutWithLambdaPass() const {
+//		int i{};
+//		t && [&](){ return (++i);};
+//		ASSERT_EQUAL(1,i);
+//	}
 
 	struct Num:strong<int,Num>,Order<Num,Bool>{};
 
@@ -152,16 +157,18 @@ struct BoolTest {
 	static_assert(!(NumX{3} > Num3{3}));
 
 	// check for no arithmetic conversion
-	template<typename FROM,typename=std::void_t<> >
-	struct BoolDoesNotConvertFrom:std::true_type{};
+	template<typename FROM,typename=void >
+	struct BoolDoesConvertFrom:std::false_type{};
 	template<typename FROM >
-	struct BoolDoesNotConvertFrom<FROM,std::void_t<decltype(Bool{std::declval<FROM>()})>>:std::false_type{};
+	struct BoolDoesConvertFrom<FROM,std::void_t<decltype(Bool{std::declval<FROM>()})>>:std::true_type{};
+	template<typename FROM>
+	static constexpr bool BoolDoesConvertFrom_v = BoolDoesConvertFrom<FROM>::value;
 	
-	static_assert(BoolDoesNotConvertFrom<int>{});
-	static_assert(BoolDoesNotConvertFrom<double>{});
-	static_assert(not BoolDoesNotConvertFrom<bool>{});
-	static_assert(not BoolDoesNotConvertFrom<int *>{});
-	static_assert(not BoolDoesNotConvertFrom<std::nullptr_t>{});
+	static_assert(not BoolDoesConvertFrom_v<int>);
+	static_assert(not BoolDoesConvertFrom_v<double>);
+	static_assert(BoolDoesConvertFrom_v<bool>);
+	static_assert(BoolDoesConvertFrom_v<int *>);
+	static_assert(BoolDoesConvertFrom_v<std::nullptr_t>);
 
 	template<typename WITH,typename=std::void_t<> >
 	struct BoolDoesNotAddWith:std::true_type{};
@@ -209,10 +216,6 @@ cute::suite make_suite_BooleanTest() {
 	s.push_back(CUTE_SMEMFUN(BoolTest, DefaultIsFalse));
 	s.push_back(CUTE_SMEMFUN(BoolTest, TernaryOperatorWorksWithFalse));
 	s.push_back(CUTE_SMEMFUN(BoolTest, TernaryOperatorWorksWithTrue));
-	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorOrShortCutWithLambda));
-	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorAndShortCutWithLambda));
-	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorOrShortCutWithLambdaPass));
-	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorAndShortCutWithLambdaPass));
 	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorOrShortCut));
 	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorOrShortCutPass));
 	s.push_back(CUTE_SMEMFUN(BoolTest, OperatorAndShortCut));

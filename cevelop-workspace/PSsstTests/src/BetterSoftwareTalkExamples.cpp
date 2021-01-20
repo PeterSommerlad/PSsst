@@ -460,7 +460,30 @@ void demonstrateLessInAssert() {
 }
 
 }
+namespace strong_type_scalarmult {
+using namespace pssst;
+struct literGas: Out<literGas> {
+  double liter; // different names for values
+};
+struct kmDriven: Out<kmDriven>, ScalarMultImpl<kmDriven,double> {
+  double km;
+};
+struct literper100km: Order<literper100km>, Out<literper100km>{ // CRTP Pattern
+  double value;
+};
 
+literper100km consumption(literGas liter, kmDriven km) {
+  return { {}, {} , liter.liter/(km*0.01).km}; // can multiply km
+}
+
+void demonstrateStrongTypeProblem() {
+  literGas l{{}, 40};
+  kmDriven km{{}, {}, 500};
+  ASSERT_EQUAL(literper100km({}, {}, 8.), consumption(l, km));
+}
+
+
+}
 
 cute::suite make_suite_BetterSoftwareTalkExamples() {
   cute::suite s{};
@@ -524,5 +547,6 @@ cute::suite make_suite_BetterSoftwareTalkExamples() {
 	s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateStrongTypeProblem));
 	s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateLessThanComparison));
 	s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateLessInAssert));
+	s.push_back(CUTE(strong_type_scalarmult::demonstrateStrongTypeProblem));
   return s;
 }
