@@ -6,48 +6,24 @@
 
 namespace pssst {
 // a better bool?
-template <typename B>
-struct BooleanOps {
-	// attempt shortcut version
-
-	friend constexpr B
-	operator || (B const &l, B const &r){
-		// no shortcut! but no side effect here useful.
-		auto const &[vl]=l;
-		auto const &[vr]=r;
-		return B{vl || vr};
-	}
-	template <typename C> // requires is_invocable_r_v<bool,C const&>
-	friend constexpr
-	std::enable_if_t<std::is_invocable_r_v<bool,C const &>, B >
-	operator || (B const &l, C const &r){
-		return l?l:B{static_cast<bool>(r())};
-	}
-	friend constexpr B
-	operator && (B const &l, B const &r){
-		// no shortcut! but no side effect here useful.
-		auto const &[vl]=l;
-		auto const &[vr]=r;
-		return B{vl && vr};
-	}
-	template <typename C> // requires is_invocable_r_v<bool,C const&>
-	friend constexpr 
-	std::enable_if_t<std::is_invocable_r_v<bool,C const &>,B>
-	operator && (B const &l, C const &r){
-		return l?B{static_cast<bool>(r())}:l;
-	}
-	friend constexpr B
-	operator !(B const &l){
-		auto const &[vl]=l;
-		return B{! vl};
-	}
-};
-struct Bool:BooleanOps<Bool>, Eq<Bool,Bool> {
+struct Bool {
 
 	constexpr Bool() noexcept=default;
 	constexpr Bool(bool const b) noexcept :
 		val { b } {
 	}
+	    friend constexpr Bool
+	    operator==(Bool const &l, Bool const& r) noexcept {
+	        return Bool{l.val == r.val};
+	    }
+	    friend constexpr Bool
+	    operator!=(Bool const &l, Bool const& r) noexcept {
+	        return !(l==r);
+	    }
+	    friend constexpr Bool
+	    operator !(Bool const &l){
+	        return Bool{! l.val};
+	    }
     // convert from pointers
 	template <typename T>
     constexpr Bool(T * const x) noexcept :
@@ -55,8 +31,13 @@ struct Bool:BooleanOps<Bool>, Eq<Bool,Bool> {
 		}
     constexpr Bool(std::nullptr_t) noexcept {}
     // other conversion attempts are not allowed
-	template <typename T>
-	constexpr Bool(T const x) noexcept =delete; // do not auto-convert anything else
+	template <typename T, typename = std::enable_if_t<
+	                    std::is_constructible<bool,T>::value
+	                    && std::is_class_v<
+	                         std::remove_cv_t<std::remove_reference_t<T>>
+	                         >> >
+	constexpr Bool(T const &x) noexcept
+	:Bool(static_cast<bool>(x)){}
 	constexpr explicit operator bool() const noexcept {
 		return val;
 	}
