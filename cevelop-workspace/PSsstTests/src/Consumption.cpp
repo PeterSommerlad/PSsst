@@ -9,30 +9,34 @@ using namespace pssst;
 struct literGas
 		: strong<double,literGas>
 		, ops<literGas,Additive,Order,Out>{
-			constexpr static inline auto  suffix=" l";
+			constexpr static  auto  suffix=" l";
+			constexpr literGas(double d):strong<double,literGas>{d}{}
 		};
 
 struct kmDriven:strong<double,kmDriven>
 ,ScalarMultImpl<kmDriven,double>,Out<kmDriven>{
-	constexpr static inline auto  prefix="driven ";
-	constexpr static inline auto  suffix=" km";
+	constexpr static  auto  prefix="driven ";
+	constexpr static  auto  suffix=" km";
+	constexpr kmDriven(double d):strong<double,kmDriven>{d}{}
 };
 
 struct literPer100km
 		:strong<double,literPer100km>
 		,ops<literPer100km,Eq,Out>{
-			constexpr static inline auto  suffix=" l/100km";
+			constexpr static  auto  suffix=" l/100km";
+			constexpr literPer100km(double d):strong<double,literPer100km>{d}{}
 		};
 struct kmpl
 		:strong<double,kmpl>
 		,ops<kmpl,Eq,Out>{
-			constexpr static inline auto  suffix=" km/l";
+			constexpr static  auto  suffix=" km/l";
+		constexpr kmpl(double d):strong<double,kmpl>{d}{}
 };
 
 
 constexpr
 literPer100km operator/(literGas l, kmDriven km){
-	return {l.value/(km/100.0).value};
+	return literPer100km{l.value/(km/100.0).value};
 }
 
 constexpr
@@ -41,7 +45,7 @@ kmpl operator/(kmDriven km, literGas l){
 }
 
 
-static_assert(sizeof(double)==sizeof(kmDriven));
+static_assert(sizeof(double)==sizeof(kmDriven),"");
 
 
 namespace myliterals {
@@ -121,11 +125,11 @@ void testKmOutputWithPrefixAndSuffix(){
 
 struct liter : ops<liter,Additive,Order,Out>{
 	// needs ctor to avoid need for extra {}
-	constexpr explicit liter(double lit):l{lit}{};
-	double l{};
+	constexpr explicit liter(double lit):value{lit}{};
+	double value{};
 };
-static_assert(sizeof(liter)==sizeof(double)); // ensure empty bases are squashed
-static_assert(std::is_trivially_copyable_v<liter>); // ensure efficient argument passing
+static_assert(sizeof(liter)==sizeof(double),""); // ensure empty bases are squashed
+static_assert(std::is_trivially_copyable<liter>::value,""); // ensure efficient argument passing
 
 
 void testLiterWithoutStrong(){

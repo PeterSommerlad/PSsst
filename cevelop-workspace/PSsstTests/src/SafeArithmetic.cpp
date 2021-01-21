@@ -5,7 +5,7 @@
 #include <boost/safe_numerics/exception_policies.hpp>
 #include <boost/safe_numerics/automatic.hpp>
 #include <cstddef>
-
+#include "pssst.h"
 // TODO more tests beyond principle
 
 // safe numerics do not save us from the wrong operations... try differently first.
@@ -17,7 +17,7 @@ using safe_size_t = boost::safe_numerics::safe< size_t >;
 void thisIsASafeArithmeticTest() {
 	safe_size_t const sz { 0 };
 	//static_assert(std::is_signed_v<decltype(sz-1LL)>,"should be signed");
-	static_assert(std::is_same_v<decltype(sz-1), safe_size_t>,"staying in the domain?");
+	static_assert(pssst::detail__::is_same_v<decltype(sz-1), safe_size_t>,"staying in the domain?");
 	ASSERT_THROWS(sz-1,std::exception);
 }
 void newTestFunction(){

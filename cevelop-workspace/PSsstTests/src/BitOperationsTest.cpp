@@ -9,7 +9,7 @@ struct U_int16 :
 #ifdef USE_STRONG
 		strong<std::uint16_t,U_int16>,
 #endif
-				 ops<U_int16, Eq, Out, BitOps, ShiftOps, ShiftOpsSym>
+				 ops<U_int16, Eq, Out, BitOps, ShiftOps>
 {
 #ifndef USE_STRONG
 	constexpr explicit U_int16(std::uint16_t val) noexcept :value{val}{}
@@ -17,15 +17,15 @@ struct U_int16 :
 	std::uint16_t value{};
 #endif
 };
-static_assert(std::is_trivially_copyable_v<U_int16>);
+static_assert(std::is_trivially_copyable<U_int16>::value,"");
 
-static_assert(static_cast<uint16_t>(~42) == (~ U_int16{42} ).value);
+static_assert(static_cast<uint16_t>(~42) == (~ U_int16{42} ).value,"");
 
-static_assert(10u == (U_int16{42} & U_int16{11}).value);
-static_assert(43u == (U_int16{42} | U_int16{11}).value);
-static_assert(43u == (U_int16{42} | U_int16{11}).value);
-static_assert(84u == (U_int16{21} << 2).value);
-static_assert(21u == (U_int16{42} >> 1).value);
+static_assert(10u == (U_int16{42} & U_int16{11}).value,"");
+static_assert(43u == (U_int16{42} | U_int16{11}).value,"");
+static_assert(43u == (U_int16{42} | U_int16{11}).value,"");
+static_assert(84u == (U_int16{21} << 2).value,"");
+static_assert(21u == (U_int16{42} >> 1).value,"");
 // fails as it should: static_assert(21u == (U_int16{42} >> 17).value);
 
 
@@ -82,13 +82,13 @@ void testBitShiftLAssign(){
 void testBitShiftLBits(){
 	U_int16  ui { 42 };
 	U_int16  bits { 5};
-	ASSERT_EQUAL(42u<< bits.value,(ui << bits).value);
+	ASSERT_EQUAL(42u<< bits.value,(ui << bits.value).value);
 }
 void testBitShiftLAssignBits(){
 	U_int16 ui{42};
 	U_int16 const bits { 5};
 
-	ui <<= bits;
+	ui <<= bits.value;
 	ASSERT_EQUAL(42u<< bits.value,ui.value);
 }
 void testBitShiftLBeyond(){
@@ -108,13 +108,13 @@ void testBitShiftRAssign(){
 void testBitShiftRBits(){
 	U_int16 const ui { 42 };
 	U_int16 const bits { 5};
-	ASSERT_EQUAL(42u>> bits.value,(ui >> bits).value);
+	ASSERT_EQUAL(42u>> bits.value,(ui >> bits.value).value);
 }
 void testBitShiftRAssignBits(){
 	U_int16 ui{42};
 	U_int16 const bits { 5};
 
-	ui >>= bits;
+	ui >>= bits.value;
 	ASSERT_EQUAL(42u >> bits.value,ui.value);
 }
 void testBitShiftRBeyond(){

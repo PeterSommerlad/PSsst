@@ -10,6 +10,7 @@ using namespace pssst;
 
 
 struct Word:strong<std::string,Word>, Out<Word>, Add<Word>, Order<Word>{
+  Word(std::string s={}):strong<std::string,Word>{s}{}
 };
 Word operator"" _w(char const * const s, size_t l){
 	return Word{std::string{s,l}};

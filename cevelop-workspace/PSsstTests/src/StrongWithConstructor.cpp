@@ -9,7 +9,10 @@ using namespace pssst;
 
 namespace StrongWithConstructor{
 // affine space: degrees (K and C)
-struct degrees: strong<double,degrees>, Linear<degrees,double>{};
+struct degrees: strong<double,degrees>, Linear<degrees,double>{
+  constexpr degrees(double d={}):strong<double,degrees>{d}{}
+
+};
 
 struct Kelvin: create_vector_space<Kelvin,degrees> {
 	using base =  create_vector_space<Kelvin,degrees>;
@@ -26,7 +29,7 @@ struct Kelvin: create_vector_space<Kelvin,degrees> {
 	}
 };
 
-static_assert(sizeof(Kelvin) == sizeof(Kelvin::affine_space::value_type));
+static_assert(sizeof(Kelvin) == sizeof(Kelvin::affine_space::value_type),"");
 
 void thisIsAKelvinDegreesTest() {
 	degrees hotter{20};

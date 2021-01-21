@@ -34,19 +34,19 @@ struct Pointer: ops<Pointer<T>,Order, Inc, Dec> {
 	using const_reference= value_type const&;
 	using pointer=value_type*;
 	using const_pointer=const value_type*;
-	constexpr reference operator*() const noexcept { return *a; }
-	constexpr reference operator[]( difference_type pos ) const noexcept { return a[pos];}
-	constexpr Pointer& operator+=( difference_type off ) noexcept { a += value(off); return *this; }
-	constexpr Pointer operator+( difference_type off ) const noexcept { return Pointer{ a + value(off) }; }
-	friend constexpr Pointer operator+( difference_type off, Pointer p )  noexcept { return Pointer{ p.a + value(off) }; }
-	constexpr Pointer& operator-=( difference_type off ) noexcept { a -= value(off); return *this; }
-	constexpr Pointer operator-( difference_type off ) const noexcept { return Pointer{ a - value(off) }; }
+	constexpr reference operator*() const noexcept { return *value; }
+	constexpr reference operator[]( difference_type pos ) const noexcept { return value[pos];}
+	constexpr Pointer& operator+=( difference_type off ) noexcept { value += (off.value); return *this; }
+	constexpr Pointer operator+( difference_type off ) const noexcept { return Pointer{ value + (off.value) }; }
+	friend constexpr Pointer operator+( difference_type off, Pointer p )  noexcept { return Pointer{ p.value + (off.value) }; }
+	constexpr Pointer& operator-=( difference_type off ) noexcept { value -= (off.value); return *this; }
+	constexpr Pointer operator-( difference_type off ) const noexcept { return Pointer{ value - (off.value) }; }
 
-	constexpr difference_type operator-(Pointer const &right) const noexcept { return difference_type{a - right.a}; }
+	constexpr difference_type operator-(Pointer const &right) const noexcept { return difference_type{value - right.value}; }
 
 	constexpr Pointer() noexcept = default;
-	explicit constexpr Pointer(T *a) noexcept : a{a}{}
-	T* a{};
+	explicit constexpr Pointer(T *value) noexcept : value{value}{}
+	T* value{};
 };
 
 }
@@ -77,10 +77,10 @@ struct array{
 	using const_reverse_iterator=std::reverse_iterator<const_iterator>;
 	constexpr pointer data() noexcept { return a;}
 	constexpr const_pointer data() const noexcept { return a;}
-	constexpr reference at( size_type pos ) { if (pos < size()) return a[value(pos)]; throw std::out_of_range{"array::at"};}
-	constexpr const_reference at( size_type pos ) const { if (pos < size()) return a[value(value(pos))]; throw std::out_of_range{"array::at"};}
-	constexpr reference operator[]( size_type pos ) noexcept { return *(begin()+value(pos));}
-	constexpr const_reference operator[]( size_type pos ) const noexcept { return *(begin()+value(pos)); }
+	constexpr reference at( size_type pos ) { if (pos < size()) return a[pos.value.value]; throw std::out_of_range{"array::at"};}
+	constexpr const_reference at( size_type pos ) const { if (pos < size()) return a[pos.value.value]; throw std::out_of_range{"array::at"};}
+	constexpr reference operator[]( size_type pos ) noexcept { return *(begin()+pos.value);}
+	constexpr const_reference operator[]( size_type pos ) const noexcept { return *(begin()+pos.value); }
 	constexpr reference front() noexcept { return *a;}
 	constexpr const_reference front() const noexcept { return *a;}
 	constexpr reference back() noexcept { return a[N-1];}
@@ -101,10 +101,10 @@ struct array{
 	constexpr size_type size() const noexcept { return size_type{N};}
 	constexpr size_type max_size() const noexcept { return size();}
 	constexpr void fill( const T& value ) { std::fill(begin(),end(),value);}
-	constexpr void swap( array& other ) noexcept(std::is_nothrow_swappable<T>::value){ std::swap_ranges(begin(), end(), other.begin());}
+	constexpr void swap( array& other ) noexcept/*(std::is_nothrow_swappable<T>::value)*/{ std::swap_ranges(begin(), end(), other.begin());}
 };
-template <class T, class... U>
-array(T, U...) -> array<T, 1 + sizeof...(U)>;
+//template <class T, class... U>
+//array(T, U...) -> array<T, 1 + sizeof...(U)>;
 
 }
 

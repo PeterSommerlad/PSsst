@@ -33,9 +33,9 @@ struct Bool {
     // other conversion attempts are not allowed
 	template <typename T, typename = std::enable_if_t<
 	                    std::is_constructible<bool,T>::value
-	                    && std::is_class_v<
+	                    && std::is_class<
 	                         std::remove_cv_t<std::remove_reference_t<T>>
-	                         >> >
+	                         >::value> >
 	constexpr Bool(T const &x) noexcept
 	:Bool(static_cast<bool>(x)){}
 	constexpr explicit operator bool() const noexcept {
@@ -43,9 +43,9 @@ struct Bool {
 	}
 	bool val{};
 };
-static_assert(sizeof(Bool)==sizeof(bool));
-static_assert(std::is_trivially_copyable_v<Bool>);
-static_assert(std::is_trivially_destructible_v<Bool>);
+static_assert(sizeof(Bool)==sizeof(bool),"");
+static_assert(std::is_trivially_copyable<Bool>::value,"");
+static_assert(std::is_trivially_destructible<Bool>::value,"");
 
 // comparisons with our non-integral Bool as result
 template <typename U>

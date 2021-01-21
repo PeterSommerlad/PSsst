@@ -4,30 +4,34 @@
 
 using namespace pssst;
 namespace without{
+
+// in C++14 inheritance implies no-aggregate. Therefore the following is moot
+
+#if 0
 struct literGas
-		: ops<literGas,Value,Additive,Order,Out>{
-		double liter;
+		: ops<literGas,Additive,Order,Out>{
+		double value;
 		};
 
 
 struct literPer100km
 		: ops<literPer100km,Eq,Out>{
-			double consuption;
+			double value;
 		};
 
 struct X: Eq<X>{
-	int val;
+	int value;
 	constexpr
-	X(int v):val{v}{}
+	X(int v):value{v}{}
 };
 
-static_assert(X{42} != X{43} && X{42} == X{42} );
+static_assert(X{42} != X{43} && X{42} == X{42} ,"");
 
-struct kmDriven:ops<kmDriven, Value, ScalarMult<double>::apply>{
-	double km;
+struct kmDriven:ops<kmDriven,  ScalarMult<double>::apply>{
+	double value;
 };
 
-static_assert(sizeof(double)==sizeof(kmDriven));
+static_assert(sizeof(double)==sizeof(kmDriven),"");
 
 
 namespace myliterals {
@@ -47,7 +51,7 @@ constexpr kmDriven operator"" _km(unsigned long long value){
 
 
 literPer100km consumption(literGas l, kmDriven km) {
-	return {{},value(l)/value(km/100.0)};
+	return {{},(l.value)/(km/100.0).value};
 }
 
 void testConsumption1over1(){
@@ -66,7 +70,7 @@ void testConsumtionWithLiterals(){
 	using namespace myliterals;
 	ASSERT_EQUAL((literPer100km{{},8.0}),consumption(40._l,500_km));
 }
-
+#endif
 namespace {
 // try mix-in without strong...
 
@@ -74,12 +78,12 @@ namespace {
 
 struct liter : ops<liter,Additive,Order,Out>{
 	// needs ctor to avoid need for extra {} below
-	constexpr explicit liter(double lit):l{lit}{};
-	double l{};
+	constexpr explicit liter(double lit):value{lit}{};
+	double value{};
 };
-static_assert(sizeof(liter)==sizeof(double)); // ensure empty bases are squashed
-static_assert(std::is_trivially_copyable_v<liter>); // ensure efficient argument passing
-static_assert(not needsbaseinit<liter>{},"does liter need base init?");
+static_assert(sizeof(liter)==sizeof(double),""); // ensure empty bases are squashed
+static_assert(std::is_trivially_copyable<liter>::value,""); // ensure efficient argument passing
+//static_assert(not needsbaseinit<liter>{},"does liter need base init?");
 
 
 void testLiterWithoutStrong(){
@@ -93,9 +97,9 @@ void testLiterWithoutStrong(){
 }
 cute::suite make_suite_ConsumptionWithoutStrong() {
 	cute::suite s { };
-	s.push_back(CUTE(without::testConsumption1over1));
-	s.push_back(CUTE(without::testConsumption40over500));
+//	s.push_back(CUTE(without::testConsumption1over1));
+//	s.push_back(CUTE(without::testConsumption40over500));
 	s.push_back(CUTE(without::testLiterWithoutStrong));
-	s.push_back(CUTE(without::testConsumtionWithLiterals));
+//	s.push_back(CUTE(without::testConsumtionWithLiterals));
 	return s;
 }

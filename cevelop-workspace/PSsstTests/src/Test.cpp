@@ -19,19 +19,21 @@
 
 
 using namespace pssst;
-struct Int: strong<int,Int>,ops<Int,Value,Order,Inc,Add,Out>{
+struct Int: strong<int,Int>,ops<Int,Order,Inc,Add,Out>{
+  constexpr Int(int v={}):strong<int,Int>{v}{}
 };
 
 namespace {
 Int  dummy{42};
 
-int &y = value_ref(dummy);
+//int &y = value_ref(dummy);
 
 }
 struct Size: strong<unsigned,Size>,ops<Size,Order,Inc,Add,Out> {
+  constexpr Size(unsigned v):strong<unsigned,Size>{v}{}
 };
 static_assert(sizeof(Size)==sizeof(unsigned),"no overhead");
-static_assert(std::is_trivially_copyable_v<Size>,"should be trivial");
+static_assert(std::is_trivially_copyable<Size>::value,"should be trivial");
 
 void testSizeworks(){
 	Size sz{42};
@@ -45,7 +47,9 @@ void testSizeworks(){
 
 
 
-	struct uptest:strong<int,uptest>,ops<uptest,UPlus>{};
+	struct uptest:strong<int,uptest>,ops<uptest,UPlus>{
+	  uptest(int v={}):strong<int,uptest>{v}{}
+	};
 
 
 void testUPlus(){
@@ -53,26 +57,34 @@ void testUPlus(){
 	ASSERT_EQUAL(one.value,(+one).value);
 }
 void testUMinus(){
-	struct umtest:strong<int,umtest>,ops<umtest,UMinus>{};
+	struct umtest:strong<int,umtest>,ops<umtest,UMinus>{
+	  umtest(int v={}):strong<int,umtest>{v}{}
+	};
 	umtest one{1};
 	ASSERT_EQUAL(-(one.value),(-one).value);
 }
 void testUInc(){
-	struct uinctest:strong<int,uinctest>,ops<uinctest,Inc>{};
+	struct uinctest:strong<int,uinctest>,ops<uinctest,Inc>{
+	  uinctest(int v={}):strong<int,uinctest>{v}{}
+	};
 	uinctest var{1};
 	ASSERT_EQUAL(2,(++var).value);
 	ASSERT_EQUAL(2,(var++).value);
 	ASSERT_EQUAL(3,var.value);
 }
 void testUDec(){
-	struct udtest:strong<int,udtest>,ops<udtest,Dec>{};
+	struct udtest:strong<int,udtest>,ops<udtest,Dec>{
+	  udtest(int i={}):strong<int,udtest>{i}{}
+	};
 	udtest var{2};
 	ASSERT_EQUAL(1,(--var).value);
 	ASSERT_EQUAL(1,(var--).value);
 	ASSERT_EQUAL(0,var.value);
 }
 
-struct S:strong<std::string,S>,ops<S,Value,Out,Eq>{};
+struct S:strong<std::string,S>,ops<S,Out,Eq>{
+  S(std::string v={}):strong<std::string,S>{v}{}
+};
 
 void testWithStringBase(){
 	S s{"hello"};
@@ -81,18 +93,20 @@ void testWithStringBase(){
 
 void testMoveWithStringBase(){
 	S s{std::string(1000u,'a')}; // assume beyond SSO
-	char const *data = value(s).data();
-	ASSERT_EQUAL(1000ul,value(s).size());
-	ASSERT_LESS_EQUAL(1000ul,value(s).capacity());
-	std::string other{value_consume(std::move(s))};
+	char const *data = (s.value).data();
+	ASSERT_EQUAL(1000ul,(s.value).size());
+	ASSERT_LESS_EQUAL(1000ul,(s.value).capacity());
+	std::string other{(std::move(s.value))};
 	ASSERT_EQUAL(1000ul,other.size());
-	ASSERT_EQUAL(0ul,value_ref(s).size());
+	ASSERT_EQUAL(0ul,(s.value).size());
 	ASSERT_EQUAL(intptr_t(data),intptr_t(other.data()));
 }
 
 struct WaitC:strong<unsigned,WaitC>
-            ,ops<WaitC,Eq,Inc,Out>{};
-static_assert(sizeof(unsigned)==sizeof(WaitC));
+            ,ops<WaitC,Eq,Inc,Out>{
+  WaitC(unsigned v={}):strong<unsigned,WaitC>{v}{}
+};
+static_assert(sizeof(unsigned)==sizeof(WaitC),"");
 void testWaitCounter(){
 	WaitC c{};
 	WaitC const one{1};

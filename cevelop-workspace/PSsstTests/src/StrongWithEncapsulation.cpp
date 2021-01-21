@@ -3,11 +3,13 @@
 #include "pssst.h"
 using namespace pssst;
 
+// C++14 doesn't provide structured bindings
+#if 0
 template <typename V, typename TAG>
 struct Strong { // can not merge ops here, because of initializers required for bases depending on incomplete type
 	static_assert(std::is_object_v<V>,"must keep real values - no references or incomplete types allowed");
 	using value_type=V;
-	Strong(value_type v):val{v}{}
+	Strong(value_type v):value{v}{}
 
 	// providig all overloads of get() breaks encapsulation anyway
 	template<size_t N = 0>
@@ -20,7 +22,7 @@ struct Strong { // can not merge ops here, because of initializers required for 
 	constexpr value_type get() const && noexcept { return std::move(val);static_assert(N==0);}
 
 private:
-	V val;
+	V value;
 };
 
 // not very useful for any subclass of Strong:
@@ -83,12 +85,12 @@ void testTestStrongStructuredBindingXValue(){
 	ASSERT_EQUAL(TestStrong{42},x);
 }
 
-
+#endif
 
 cute::suite make_suite_StrongWithEncapsulation() {
 	cute::suite s { };
-	s.push_back(CUTE(thisIsAStrongWithEncapsulationTest));
-	s.push_back(CUTE(testTestStrongStructuredBinding));
-	s.push_back(CUTE(testTestStrongStructuredBindingXValue));
+//	s.push_back(CUTE(thisIsAStrongWithEncapsulationTest));
+//	s.push_back(CUTE(testTestStrongStructuredBinding));
+//	s.push_back(CUTE(testTestStrongStructuredBindingXValue));
 	return s;
 }
