@@ -65,7 +65,7 @@ using underlying_value_type = decltype(detail__::membertype(std::declval<T>()));
 // the latter is much too tricky to detect.
 // only ever true for aggregates with a single member and empty bases
 
-template <typename T, typename= std::void_t<>>
+template <typename T, typename= void>
 struct needsbaseinit:std::false_type{};
 
 template <typename T>
