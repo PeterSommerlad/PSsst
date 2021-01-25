@@ -7,8 +7,7 @@
 using namespace pssst;
 
 struct literGas
-		: strong<double,literGas>
-		, ops<literGas,Additive,Order,Out>{
+		: strong<double,literGas,Additive,Order,Out>{
 			constexpr static inline auto  suffix=" l";
 		};
 
@@ -19,13 +18,11 @@ struct kmDriven:strong<double,kmDriven>
 };
 
 struct literPer100km
-		:strong<double,literPer100km>
-		,ops<literPer100km,Eq,Out>{
+		:strong<double,literPer100km,Eq,Out>{
 			constexpr static inline auto  suffix=" l/100km";
 		};
 struct kmpl
-		:strong<double,kmpl>
-		,ops<kmpl,Eq,Out>{
+		:strong<double,kmpl,Eq,Out>{
 			constexpr static inline auto  suffix=" km/l";
 };
 

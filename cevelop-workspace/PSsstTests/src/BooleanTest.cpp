@@ -117,7 +117,7 @@ struct BoolTest {
 		ASSERT_EQUAL(1,i);
 	}
 
-    struct Num:strong<int,Num>,OrderB<Num>{};
+    struct Num:strong<int,Num,OrderB>{};
 
     static_assert(Num{3} == Num{3});
     static_assert(not(Num{3} != Num{3}));

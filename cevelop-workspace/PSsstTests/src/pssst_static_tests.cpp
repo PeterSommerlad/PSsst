@@ -21,7 +21,7 @@ static_assert(!is_vector_space_v<int>,"int is no absolute unit");
 
 
 
-struct bla:strong<int,bla>,Linear<bla,int>{};
+struct bla:strong<int,bla,detail__::bind2<int,Linear>::template apply>{};
 static_assert(sizeof(bla)==sizeof(int));
 static_assert(!is_vector_space_v<bla>,"bla is absolute?");
 static_assert(0 == bla{0}.value, "check for subobject warning");
