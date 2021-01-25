@@ -9,6 +9,20 @@ namespace test{
 enum class color { black, blue, green, cyan, red, magenta, yellow, white, limit__=white };
 enum class coloroff:unsigned { black = 42, start__=black, blue, green, cyan, red, magenta, yellow, white, limit__=white };
 enum class nocolor { black, gray, white };
+
+using pssst::detail__::enum_has_limit;
+using pssst::detail__::enum_has_start;
+using pssst::detail__::wrap_increment;
+
+static_assert(enum_has_limit<color>{},"");
+static_assert(not enum_has_start<color>{},"");
+static_assert(enum_has_limit<coloroff>{},"");
+static_assert(enum_has_start<coloroff>{},"");
+static_assert(not enum_has_limit<nocolor>{},"");
+static_assert(not enum_has_start<nocolor>{},"");
+static_assert(color::black == wrap_increment<color>(enum_has_start<color>{}),"");
+static_assert(coloroff::start__ == wrap_increment<coloroff>(enum_has_start<coloroff>{}),"");
+
 namespace iter {
 enum class color { black, blue, green, cyan, red, magenta, yellow, white, limit__ };
 enum class coloroff:unsigned { black = 42, start__=black, blue, green, cyan, red, magenta, yellow, white, limit__ };
@@ -18,6 +32,14 @@ using pssst::enum_iteration::begin;
 using pssst::enum_iteration::end;
 using pssst::enum_iteration::operator++;
 using pssst::enum_iteration::operator--;
+
+
+// for asserts
+
+static_assert(enum_has_limit<color>{},"");
+static_assert(not enum_has_start<color>{},"");
+static_assert(enum_has_limit<coloroff>{},"");
+static_assert(enum_has_start<coloroff>{},"");
 
 }
 // only for tests, otherwise too generic
@@ -83,9 +105,9 @@ void testRangeFor(){
 	int counter=0;
 
 	auto b = begin(iter::color{});
-//	ASSERT_EQUAL(iter::color::black,*b);
+	ASSERT_EQUAL(iter::color::black,*b);
 	auto const e = end(iter::color{});
-//	ASSERT_EQUAL(iter::color::limit__, *e);
+	ASSERT_EQUAL(iter::color::limit__, *e);
 	auto it = e;
 	do {
 		--it;

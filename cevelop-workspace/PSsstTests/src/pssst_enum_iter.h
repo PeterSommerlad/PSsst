@@ -3,7 +3,6 @@
 #include "pssst.h"
 
 
-
 namespace pssst {
 
 // duplication of macro to avoid leaking it from header
@@ -36,6 +35,40 @@ detail__::void_t<decltype(E::start__)>
 
 template <typename E>
 using ule = std::underlying_type_t<E>;
+
+
+template<typename E>
+constexpr E wrap_increment(std::false_type) noexcept{
+  return E{0}; // assume zero start
+}
+template<typename E>
+constexpr E wrap_increment(std::true_type) noexcept{
+  return E::start__; // start__ value
+}
+template<typename E>
+constexpr E wrap_decrement(ule<E> &val,std::false_type) noexcept{
+  return E{--val}; // assume zero start
+}
+template<typename E>
+constexpr E wrap_decrement(ule<E> &, std::true_type) noexcept{
+  return E::limit__; // start__ value
+}
+
+
+template<typename E>
+constexpr E wrapped_value(ule<E> val, std::false_type) noexcept {
+  return static_cast<E>(val); // no bounds check and no wrapping to new start
+}
+
+template<typename E>
+constexpr E wrapped_value(ule<E>val, std::true_type) noexcept {
+  if (val > static_cast<ule<E>>(E::limit__)){
+    return wrap_increment<E>(typename enum_has_start<E>::type{});
+  }
+  return static_cast<E>(val); // within bounds
+}
+
+
 }
 namespace enum_iteration {
 template < typename E , typename = std::enable_if_t<std::is_enum<E>::value >>
@@ -44,6 +77,7 @@ constexpr E operator++(E &e) noexcept {
 	auto val=static_cast<ule<E>>(e);
 	pssst_assert(val < std::numeric_limits<decltype(val)>::max());
 	++val;
+	return e = wrapped_value<E>(val,typename enum_has_limit<E>::type{});
 //	if constexpr(enum_has_limit<E>{}){
 //		if (val > static_cast<ule<E>>(E::limit__)){
 //			if constexpr (enum_has_start<E>{}){
@@ -53,8 +87,8 @@ constexpr E operator++(E &e) noexcept {
 //			}
 //		}
 //	}
-	e = static_cast<E>(val);
-	return e;
+//	e = static_cast<E>(val);
+//	return e;
 }
 template < typename E , typename = std::enable_if_t<std::is_enum<E>::value>>
 constexpr E operator++(E & e, int) noexcept {
@@ -66,21 +100,12 @@ template < typename E , typename = std::enable_if_t<std::is_enum<E>::value >>
 constexpr E operator--(E &e) noexcept {
 	using namespace detail__;
 	auto val=static_cast<ule<E>>(e);
-//	constexpr E begin = []{
-//			if constexpr (enum_has_start<E>{})
-//				return E::start__ ;
-//			else
-//				return E{};
-//	}();
+	constexpr E begin = wrap_increment<E>(typename enum_has_start<E>::type{});
 
-//	if (e == begin){ // start is inclusive
-//		if constexpr(enum_has_limit<E>{}){
-//			 return e = E::limit__; // limit is supposed to be inclusive
-//		}
-//	}
-//	if constexpr(std::is_signed_v<decltype(val)>) {
-//			pssst_assert(val > std::numeric_limits<decltype(val)>::min());
-//	}
+	if (enum_has_limit<E>{} && e == begin){ // start is inclusive
+	  return e = wrap_decrement<E>(val,typename enum_has_limit<E>::type{});
+	}
+    pssst_assert(val > std::numeric_limits<decltype(val)>::min());
 	--val;
 	e = static_cast<E>(val);
 	return e;
@@ -98,8 +123,8 @@ template<typename E, typename = std::enable_if_t<detail__::enum_has_limit<E>{}>>
 struct enum_iterator
 		:ops<enum_iterator<E>,Inc,Dec,Eq>{
 			E value;
-			constexpr enum_iterator(E val):value{val}{}
-constexpr E operator*()noexcept {
+			explicit constexpr enum_iterator(E val):value{val}{}
+constexpr E operator*() const noexcept {
 	return (*this).value;
 }
 };

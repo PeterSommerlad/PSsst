@@ -41,6 +41,14 @@ struct bind2{
   template<typename A, typename ...C>
   using apply=T<A,B,C...>;
 };
+template <typename V, typename TAG>
+struct holder {
+  static_assert(std::is_object_v<V>, "must keep real values - no references or incomplete types allowed");
+  using value_type = V;
+  V value { };
+};
+
+
 }
 
 #ifndef NDEBUG
@@ -55,11 +63,8 @@ template <typename U, template <typename ...> class ...BS>
 struct ops:BS<U>...{};
 
 // Either use this as the first base of TAG or nothing
-template <typename V, typename TAG>
-struct strong {
-  static_assert(detail__::is_object_v<V>, "must keep real values - no references or incomplete types allowed");
-  using value_type = V;
-  V value { };
+template <typename V, typename TAG, template<typename...>class ...OPS>
+struct strong:detail__::holder<V,TAG>,ops<TAG,OPS...> {
 };
 
 
@@ -467,29 +472,59 @@ struct ScalarMultImpl : ScalarModulo<R,BASE,std::is_integral<BASE>::value && not
 };
 
 // scalar multiplication must know the scalar type
-template<typename BASE>
+template<typename TAG,typename BASE=double>
 using ScalarMult=detail__::bind2<BASE,ScalarMultImpl>;
+// usage: strong<unsigned,TAG,ScalarMult<unsigned>::template apply,Add>
+// or for typical value types one below
+
+template<typename TAG>
+using ScalarMult_d= ScalarMultImpl<TAG,double>;
+template<typename TAG>
+using ScalarMult_f= ScalarMultImpl<TAG,float>;
+template<typename TAG>
+using ScalarMult_ld= ScalarMultImpl<TAG,long double>;
+template<typename TAG>
+using ScalarMult_i= ScalarMultImpl<TAG,int>;
+template<typename TAG>
+using ScalarMult_ll= ScalarMultImpl<TAG,long long>;
+
+
 
 // a 1-d linear space without origin (or implicit zero)
+// first define affine space operations and then define vector space according to affine space
+// operations in vector space can be extended if origin is zero
 template <typename V, typename BASE> // can not use underlying_value_type, because V is still incomplete
 using Linear=ops<V, Additive, ScalarMult<BASE>::template apply, Order, Out>;
 
 
-// first define affine space operations and then define vector space according to affine space
-// operations in vector space can be extended if origin is zero
+// usage: strong<unsigned,TAG,Linear<unsigned>::template apply,Add>
+// or by directly inheriting for type TAG: struct TAG: Linear<TAG,unsigned>{ unsigned value;}
+// or for typical value types one below for use as strong<> or ops<> template arguments
+
+template<typename TAG>
+using Linear_d= Linear<TAG,double>;
+template<typename TAG>
+using Linear_f= Linear<TAG,float>;
+template<typename TAG>
+using Linear_ld= Linear<TAG,long double>;
+template<typename TAG>
+using Linear_i= Linear<TAG,int>;
+template<typename TAG>
+using Linear_ll= Linear<TAG,long long>;
+
+// 1 dimensional vector space = Linear + origin(= ZEROFUNC{}())
 template <typename ME, typename AFFINE, typename ZEROFUNC=default_zero<AFFINE>>
 struct create_vector_space : ops<ME,Order, Out>{
   using affine_space=AFFINE;
   using vector_space=ME;
   using value_type=underlying_value_type<affine_space>;
-  static_assert(detail__::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
-  static constexpr vector_space origin {retval<affine_space>(ZEROFUNC{}())};
-  constexpr create_vector_space()=default;
+  static_assert(std::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
+  static inline constexpr vector_space origin {retval<affine_space>(ZEROFUNC{}())};
   // the following two constructors are deliberately implicit:
-  constexpr create_vector_space(affine_space v):value{v}{}
+  constexpr create_vector_space(affine_space v=ZEROFUNC{}()):value{v}{}
   constexpr create_vector_space(underlying_value_type<affine_space> v):value{retval<affine_space>(v)}{}
 
-  affine_space value{};
+  affine_space value{ZEROFUNC{}()};
 
   // need to redefine linear operations to take origin into account.
   // linear
