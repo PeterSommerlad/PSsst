@@ -3,25 +3,25 @@
 #include "pssst.h"
 #include <stdexcept>
 #include <iostream>
+#include <ostream>
 using namespace pssst;
 
 // possible but not well suited, needs separate thing, because
 
 namespace StrongWithConstructor{
 // affine space: degrees (K and C)
-struct degrees: strong<double,degrees>, Linear<degrees,double>{
-  constexpr degrees(double d={}):strong<double,degrees>{d}{}
-
+struct degrees: strong<double, degrees, Linear_d>{
+constexpr degrees(double d={}):strong{d}{}
 };
 
 struct Kelvin: create_vector_space<Kelvin,degrees> {
-	using base =  create_vector_space<Kelvin,degrees>;
+	using base =  create_vector_space;
 	constexpr Kelvin(value_type v): base{v} {
 		if(v < value_type{} ) throw std::logic_error{"can not have negative K temperature"};
 	}
 	constexpr Kelvin(affine_space v): base{v} {
 		if(v < affine_space{value_type{}}|| v > affine_space{value_type{50}}) {
-			std::cerr << "throwing ctor" << std::endl;
+			std::cerr << "throwing ctor\n" ;
 
 			throw std::logic_error{"can not have negative K temperature"};
 

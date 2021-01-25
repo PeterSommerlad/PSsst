@@ -21,18 +21,18 @@ static_assert(!is_vector_space_v<int>,"int is no absolute unit");
 
 
 
-struct bla:strong<int,bla>,Linear<bla,int>{
-  constexpr bla(int v={}):strong<int,bla>{v}{}
+struct bla:strong<int,bla,detail__::bind2<int,Linear>::template apply>{
+  constexpr bla(int v={}):strong{v}{}
 };
-static_assert(sizeof(bla)==sizeof(int),"");
+static_assert(sizeof(bla)==sizeof(int));
 static_assert(!is_vector_space_v<bla>,"bla is absolute?");
 static_assert(0 == bla{0}.value, "check for subobject warning");
 struct blu:create_vector_space<blu,bla>{
-  constexpr blu(bla v={}):create_vector_space<blu,bla>{v}{}
+  constexpr blu(bla v={0}):create_vector_space{v}{}
 };
 static_assert(sizeof(blu)==sizeof(int),"");
 static_assert(is_vector_space_v<blu>,"blu should be vector space");
-static_assert(blu::origin==blu{0},"blu origin is zero");
+static_assert(blu::origin==blu{},"blu origin is zero");
 static_assert(blu{42}.value==bla{42}, "rel accessible");
 static_assert(detail__::is_same_v<int,underlying_value_type<bla>>,"..");
 
