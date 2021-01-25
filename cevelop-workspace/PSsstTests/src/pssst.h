@@ -12,28 +12,32 @@ namespace pssst {
 namespace detail__ {
 constexpr inline void
 throwing_assert(bool cond, char const *msg) {
-  if (not cond)
-    throw std::logic_error(msg);
+  if (not cond) throw std::logic_error(msg);
 }
-template<typename T, std::enable_if_t<std::is_class_v<std::remove_reference_t<T>>, int> = 0>
-constexpr auto
-membertype(T x) {
-  auto [y] = x;
+template <typename T,  std::enable_if_t<std::is_class_v<std::remove_reference_t<T>>,int> = 0>
+constexpr auto membertype(T x) {
+  auto [y]=x;
   return y;
 }
-template<typename T, std::enable_if_t<not std::is_class_v<std::remove_reference_t<T>>, int> = 0>
-constexpr std::remove_reference_t<T>
-membertype(T x) {
+template <typename T,  std::enable_if_t<not std::is_class_v<std::remove_reference_t<T>>,int> = 0>
+constexpr std::remove_reference_t<T> membertype(T x) {
   return x;
 }
 // meta-binder for second template argument
-template<typename B, template<typename ...>class T>
-struct bind2 {
+template<typename B, template<typename...>class T>
+struct bind2{
   template<typename A, typename ...C>
   using apply=T<A,B,C...>;
 };
+template <typename V, typename TAG>
+struct holder {
+  static_assert(std::is_object_v<V>, "must keep real values - no references or incomplete types allowed");
+  using value_type = V;
+  V value { };
+};
 
-  } // detail__
+
+}
 
 #ifndef NDEBUG
 #define pssst_assert(cond) detail__::throwing_assert((cond),#cond)
@@ -46,11 +50,8 @@ template<typename U, template<typename ...> class ...BASE>
 struct ops:BASE<U>... {};
 
 // Either use this as the first base of TAG or nothing
-template<typename V, typename TAG>
-struct strong {
-  static_assert(std::is_object_v<V>, "must keep real values - no references or incomplete types allowed");
-  using value_type = V;
-  V value{};
+template <typename V, typename TAG, template<typename...>class ...OPS>
+struct strong:detail__::holder<V,TAG>,ops<TAG,OPS...> {
 };
 
 template<typename T>
@@ -60,19 +61,17 @@ using underlying_value_type = decltype(detail__::membertype(std::declval<T>()));
 // the latter is much too tricky to detect.
 // only ever true for aggregates with a single member and empty bases
 
-template<typename T, typename = std::void_t<>>
-struct needsbaseinit: std::false_type {
-};
+
+template <typename T, typename= void>
+struct needsbaseinit:std::false_type{};
 
 template<typename T>
 struct needsbaseinit<T, std::void_t<decltype(T { {},std::declval<underlying_value_type<T>>()})> >
-: std::is_aggregate<T> {
-};
+: std::is_aggregate<T> {};
 
 // construct strong type from wrapped value type
 template<typename T, typename S = underlying_value_type<T>>
-constexpr auto
-retval(S &&x) noexcept(std::is_nothrow_constructible_v<T,S> ) {
+constexpr auto retval(S &&x) noexcept(std::is_nothrow_constructible_v<T,S> ) {
   if constexpr (needsbaseinit<T> {})
     return T{{}, std::move(x)}; // value in most derived
   else
@@ -102,10 +101,11 @@ struct Value {
   }
 };
 
+
 // for linear operations/vector space
-template<typename T>
-struct default_zero {
-  constexpr T operator()() const noexcept(std::is_nothrow_default_constructible_v<T>) {
+template <typename T>
+struct default_zero{
+  constexpr T operator()() const noexcept(std::is_nothrow_default_constructible_v<T>){
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
     return retval<T>({});
@@ -130,7 +130,7 @@ struct Eq {
   }
   // resurrect if the type Bool is not bool
   friend constexpr
-  Bool operator!=(U const &l, U const& r) noexcept
+  Bool operator!=(U const &l, U const &r) noexcept
   requires requires {not std::same_as<bool,Bool>;} {
     return !(l==r);
   }
@@ -382,12 +382,12 @@ struct Sub {
 
 // this is how many other std::math functions could be supported
 #define MakeUnaryMathFunc(fun) \
-		friend constexpr U \
-		fun(U const &r) {\
-			auto const &[v]=r;\
-			using std::fun;\
-			return retval<U>(fun(v)); \
-		}
+    friend constexpr U \
+    fun(U const &r) {\
+  auto const &[v]=r;\
+  using std::fun;\
+  return retval<U>(fun(v)); \
+}
 
 template<typename U>
 struct Abs { // is part of Additive, because unit tests need that for comparisons of float like types
@@ -407,12 +407,12 @@ struct Rounding {
 // the following should return the underlying type or double, because they are not linear
 // and thus the result should not be of the strong type applied to
 #define MakeUnaryMathFuncPlain(fun) \
-		friend constexpr auto \
-		fun(U const &r) {\
-			auto const &[v]=r;\
-			using std::fun;\
-			return fun(v); \
-		}
+    friend constexpr auto \
+    fun(U const &r) {\
+  auto const &[v]=r;\
+  using std::fun;\
+  return fun(v); \
+}
 
 // demo/convenience, not used yet
 template<typename U>
@@ -453,19 +453,6 @@ using Additive=ops<V,UPlus,UMinus,Abs,Add,Sub,Inc,Dec>;
 
 namespace detail__ {
 // detect prefix and suffix static members for output
-template<typename U, typename = std::void_t<>>
-struct has_prefix: std::false_type {
-};
-template<typename U>
-struct has_prefix<U, std::void_t<decltype(U::prefix)>> : std::true_type {
-};
-template<typename U, typename = std::void_t<>>
-struct has_suffix: std::false_type {
-};
-template<typename U>
-struct has_suffix<U, std::void_t<decltype(U::suffix)>> : std::true_type {
-};
-
 template<typename U>
 concept has_prefixc = requires (U u) { U::prefix; };
 template<typename U>
@@ -543,58 +530,86 @@ struct ScalarMultImpl: ScalarModulo<R, BASE, std::is_integral_v<BASE> && not std
 };
 
 // scalar multiplication must know the scalar type
-template<typename BASE>
+template<typename TAG,typename BASE=double>
 using ScalarMult=detail__::bind2<BASE,ScalarMultImpl>;
+// usage: strong<unsigned,TAG,ScalarMult<unsigned>::template apply,Add>
+// or for typical value types one below
 
+template<typename TAG>
+using ScalarMult_d= ScalarMultImpl<TAG,double>;
+template<typename TAG>
+using ScalarMult_f= ScalarMultImpl<TAG,float>;
+template<typename TAG>
+using ScalarMult_ld= ScalarMultImpl<TAG,long double>;
+template<typename TAG>
+using ScalarMult_i= ScalarMultImpl<TAG,int>;
+template<typename TAG>
+using ScalarMult_ll= ScalarMultImpl<TAG,long long>;
+
+
+
+// first define affine space operations and then define vector space according to affine space
 // a 1-d linear space without origin (or implicit zero)
 template<typename V, typename BASE> // can not use underlying_value_type, because V is still incomplete
 using Linear=ops<V, Additive, ScalarMult<BASE>::template apply, Order, Value, Out>;
+// usage: strong<unsigned,TAG,Linear<unsigned>::template apply,Add>
+// or by directly inheriting for type TAG: struct TAG: Linear<TAG,unsigned>{ unsigned value;}
+// or for typical value types one below for use as strong<> or ops<> template arguments
 
-// first define affine space operations and then define vector space according to affine space
-// operations in vector space can be extended if origin is zero
-template<typename ME, typename AFFINE, typename ZEROFUNC = default_zero<AFFINE>>
-struct create_vector_space: ops<ME, Order, Value, Out> {
+template<typename TAG>
+using Linear_d= Linear<TAG,double>;
+template<typename TAG>
+using Linear_f= Linear<TAG,float>;
+template<typename TAG>
+using Linear_ld= Linear<TAG,long double>;
+template<typename TAG>
+using Linear_i= Linear<TAG,int>;
+template<typename TAG>
+using Linear_ll= Linear<TAG,long long>;
+
+// 1 dimensional vector space = Linear + origin(= ZEROFUNC{}())
+template <typename ME, typename AFFINE, typename ZEROFUNC=default_zero<AFFINE>>
+struct create_vector_space : ops<ME,Order, Value, Out>{
   using affine_space=AFFINE;
   using vector_space=ME;
   using value_type=underlying_value_type<affine_space>;
-  static_assert(std::is_same_v<affine_space,decltype(ZEROFUNC {}())>, "origin must be in domain affine");
-  static inline constexpr vector_space origin{retval<affine_space>(ZEROFUNC{}())};
-  constexpr create_vector_space() = default;
+  static_assert(std::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
+  static inline constexpr vector_space origin {retval<affine_space>(ZEROFUNC{}())};
   // the following two constructors are deliberately implicit:
-  constexpr create_vector_space(affine_space v) :
-      value{v} {
-  }
-  constexpr create_vector_space(underlying_value_type<affine_space> v) :
-      value{retval < affine_space > (v)} {
-  }
+  constexpr create_vector_space(affine_space v=ZEROFUNC{}()):value{v}{}
+  constexpr create_vector_space(underlying_value_type<affine_space> v):value{retval<affine_space>(v)}{}
 
-  affine_space value{};
+  affine_space value{ZEROFUNC{}()};
 
   // need to redefine linear operations to take origin into account.
   // linear
   // vs + as
   friend constexpr vector_space&
-  operator+=(vector_space &l, affine_space const &r) noexcept(noexcept(l = vector_space {l.value + r})) {
+  operator+=(vector_space& l, affine_space const &r) noexcept(noexcept(l = vector_space{l.value + r})) {
     l = vector_space{l.value + r};
     return l;
   }
-  friend constexpr vector_space operator+(vector_space l, affine_space const &r) noexcept(noexcept(l += r)) {
+  friend constexpr vector_space
+  operator+(vector_space l, affine_space const &r) noexcept(noexcept(l += r)) {
     return l += r;
   }
-  friend constexpr vector_space operator+(affine_space const &l, vector_space r) noexcept(noexcept(r += l)) {
+  friend constexpr vector_space
+  operator+(affine_space const & l, vector_space r) noexcept(noexcept(r += l)) {
     return r += l;
   }
   // vs - as // caution check if before origin is allowed overflow check
   friend constexpr vector_space&
-  operator-=(vector_space &l, affine_space const &r) noexcept(noexcept(l = vector_space {l.value - r})) {
+  operator-=(vector_space& l, affine_space const &r) noexcept(noexcept(l = vector_space{l.value - r})) {
     l = vector_space{l.value - r};
     return l;
   }
-  friend constexpr vector_space operator-(vector_space l, affine_space const &r) noexcept(noexcept(l -= r)) {
+  friend constexpr vector_space
+  operator-(vector_space l, affine_space const &r) noexcept(noexcept(l -= r)) {
     return l -= r;
   }
   // vs - vs = as
-  friend constexpr affine_space operator-(vector_space const &l, vector_space const &r) noexcept(noexcept(l.value - r.value)) {
+  friend constexpr affine_space
+  operator-(vector_space const &l,vector_space const &r) noexcept(noexcept(l.value - r.value)) {
     return l.value - r.value;
   }
   // vs + vs, vs * scalar
@@ -603,29 +618,33 @@ struct create_vector_space: ops<ME, Order, Value, Out> {
     l = origin + ((l - origin) + (r - origin));
     return l;
   }
-  friend constexpr vector_space operator+(vector_space l, vector_space const &r) noexcept(noexcept(l+=r)) {
+  friend constexpr vector_space
+  operator+(vector_space l, vector_space const &r) noexcept(noexcept(l+=r)) {
     l += r;
     return l;
   }
   friend constexpr vector_space&
   operator *=(vector_space &l, value_type r) noexcept(noexcept(l = origin + (l - origin) * r)) {
-    l = origin + (l - origin) * r;
+    l = origin + (l - origin) * r ;
     return l;
   }
-  friend constexpr vector_space operator*(vector_space l, value_type const &r) noexcept(noexcept(l *= r)) {
+  friend constexpr vector_space
+  operator*(vector_space l, value_type const &r) noexcept(noexcept(l *= r)) {
     return l *= r;
   }
-  friend constexpr vector_space operator*(value_type const &l, vector_space r) noexcept(noexcept(r *= l)) {
+  friend constexpr vector_space
+  operator*(value_type const & l, vector_space r) noexcept(noexcept(r *= l)) {
     return r *= l;
   }
   friend constexpr vector_space&
-  operator/=(vector_space &l, value_type const &r) {
+  operator/=(vector_space& l, value_type const &r) {
     // need to check if r is 0 and handle error
     pssst_assert(r != decltype(r){});
-    l = vector_space{l.value / r};
+    l = vector_space{ l.value / r };
     return l;
   }
-  friend constexpr vector_space operator/(vector_space l, value_type const &r) {
+  friend constexpr vector_space
+  operator/(vector_space l, value_type const &r)  {
     return l /= r;
   }
 };
@@ -633,11 +652,11 @@ struct create_vector_space: ops<ME, Order, Value, Out> {
 // must be vector spaces from same affine space, e.g. celsius to kelvin
 // TODO: conversion with scaling factor, e.g. fahrenheit to celsius
 template<typename TO, typename FROM>
-constexpr TO convertTo(FROM from) noexcept {
+constexpr TO convertTo(FROM from) noexcept{
   static_assert(std::is_same_v<
       typename FROM::affine_space
       ,typename TO::affine_space>);
-  return retval<TO>((from.value - (value(TO::origin) - value(FROM::origin))));
+  return retval<TO>((from.value-(value(TO::origin)-value(FROM::origin))));
 }
 
 } // pssst

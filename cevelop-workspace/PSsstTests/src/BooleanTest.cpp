@@ -83,26 +83,16 @@ struct BoolTest {
 		i = f? i : i + 1;
 		ASSERT_EQUAL(1,i);
 	}
-	void OperatorOrShortCut() const {
+    void OperatorOrShortCut() const {
       int i{};
       t || ++i;
       ASSERT_EQUAL(0,i);
-	}
+    }
     void OperatorOrShortCutPass() const {
       int i{};
       f || ++i;
       ASSERT_EQUAL(1,i);
     }
-//	void OperatorOrShortCutWithLambda() const {
-//		int i{};
-//		t || [&](){ return (++i);}; // obtain shortcut by passing a lambda returning convertible to bool
-//		ASSERT_EQUAL(0,i);
-//	}
-//	void OperatorOrShortCutWithLambdaPass() const {
-//		int i{};
-//		f || [&](){ return (++i);};
-//		ASSERT_EQUAL(1,i);
-//	}
     void OperatorAndShortCut() const {
         int i{};
         f && ++i;
@@ -113,16 +103,6 @@ struct BoolTest {
         t && ++i;
         ASSERT_EQUAL(1,i);
     }
-//	void OperatorAndShortCutWithLambda() const {
-//		int i{};
-//		f && [&](){ return (++i);};
-//		ASSERT_EQUAL(0,i);
-//	}
-//	void OperatorAndShortCutWithLambdaPass() const {
-//		int i{};
-//		t && [&](){ return (++i);};
-//		ASSERT_EQUAL(1,i);
-//	}
 
 	struct Num:strong<int,Num>,Order<Num,Bool>{};
 
@@ -156,6 +136,12 @@ struct BoolTest {
 	static_assert(!(Num3{3} < NumX{3}));
 	static_assert(!(NumX{3} > Num3{3}));
 
+    static_assert(Num{3} == Num{3});
+    static_assert(not(Num{3} != Num{3}));
+    static_assert(Num{3} <= Num{3});
+    static_assert(Num{3} >= Num{3});
+    static_assert(!(Num{3} < Num{3}));
+    static_assert(!(Num{3} > Num{3}));
 	// check for no arithmetic conversion
 	template<typename FROM,typename=void >
 	struct BoolDoesConvertFrom:std::false_type{};
@@ -164,12 +150,12 @@ struct BoolTest {
 	template<typename FROM>
 	static constexpr bool BoolDoesConvertFrom_v = BoolDoesConvertFrom<FROM>::value;
 	
-	static_assert(not BoolDoesConvertFrom_v<int>);
-	static_assert(not BoolDoesConvertFrom_v<double>);
-	static_assert(BoolDoesConvertFrom_v<bool>);
-	static_assert(BoolDoesConvertFrom_v<int *>);
-	static_assert(BoolDoesConvertFrom_v<std::nullptr_t>);
 
+    static_assert(not BoolDoesConvertFrom_v<int>);
+    static_assert(not BoolDoesConvertFrom_v<double>);
+    static_assert(BoolDoesConvertFrom_v<bool>);
+    static_assert(BoolDoesConvertFrom_v<int *>);
+    static_assert(BoolDoesConvertFrom_v<std::nullptr_t>);
 	template<typename WITH,typename=std::void_t<> >
 	struct BoolDoesNotAddWith:std::true_type{};
 	template<typename WITH >

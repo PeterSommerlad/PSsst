@@ -9,7 +9,7 @@ using namespace pssst;
 
 namespace StrongWithConstructor{
 // affine space: degrees (K and C)
-struct degrees: strong<double,degrees>, Linear<degrees,double>{};
+struct degrees: strong<double, degrees, Linear_d>{};
 
 struct Kelvin: create_vector_space<Kelvin,degrees> {
 	using base =  create_vector_space<Kelvin,degrees>;
