@@ -12,16 +12,17 @@
 namespace test {
 using namespace pssst;
 struct Diff: strong<std::ptrdiff_t,Diff,detail__::bind2<std::ptrdiff_t,Linear>::template apply>{
+  constexpr Diff(std::ptrdiff_t val={}) noexcept :strong{val}{}
 };
 struct Size: create_vector_space<Size,Diff> {
 	constexpr Size() noexcept = default;
-	constexpr Size(size_t val)
-	:Size{Diff{static_cast<std::ptrdiff_t>(val)}}{}
 	constexpr Size(Diff val)
 	:create_vector_space{val}{
 		if (val < Diff{0})
 			throw std::logic_error{"size is too large"};
 	}
+	constexpr Size(size_t val)
+	:Size{Diff{static_cast<std::ptrdiff_t>(val)}}{}
 };
 
 template<typename T>

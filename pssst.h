@@ -43,7 +43,7 @@ struct bind2{
 };
 template <typename V, typename TAG>
 struct holder {
-  static_assert(std::is_object_v<V>, "must keep real values - no references or incomplete types allowed");
+  static_assert(std::is_object<V>::value, "must keep real values - no references or incomplete types allowed");
   using value_type = V;
   V value { };
 };
@@ -65,6 +65,7 @@ struct ops:BS<U>...{};
 // Either use this as the first base of TAG or nothing
 template <typename V, typename TAG, template<typename...>class ...OPS>
 struct strong:detail__::holder<V,TAG>,ops<TAG,OPS...> {
+  constexpr strong(V val={}) noexcept :detail__::holder<V,TAG>{val}{}
 };
 
 
@@ -518,8 +519,8 @@ struct create_vector_space : ops<ME,Order, Out>{
   using affine_space=AFFINE;
   using vector_space=ME;
   using value_type=underlying_value_type<affine_space>;
-  static_assert(std::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
-  static inline constexpr vector_space origin {retval<affine_space>(ZEROFUNC{}())};
+  static_assert(detail__::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
+  static constexpr vector_space origin {retval<affine_space>(ZEROFUNC{}())};
   // the following two constructors are deliberately implicit:
   constexpr create_vector_space(affine_space v=ZEROFUNC{}()):value{v}{}
   constexpr create_vector_space(underlying_value_type<affine_space> v):value{retval<affine_space>(v)}{}

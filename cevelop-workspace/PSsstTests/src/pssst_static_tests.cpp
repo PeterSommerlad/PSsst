@@ -24,7 +24,7 @@ static_assert(!is_vector_space_v<int>,"int is no absolute unit");
 struct bla:strong<int,bla,detail__::bind2<int,Linear>::template apply>{
   constexpr bla(int v={}):strong{v}{}
 };
-static_assert(sizeof(bla)==sizeof(int));
+static_assert(sizeof(bla)==sizeof(int),"");
 static_assert(!is_vector_space_v<bla>,"bla is absolute?");
 static_assert(0 == bla{0}.value, "check for subobject warning");
 struct blu:create_vector_space<blu,bla>{

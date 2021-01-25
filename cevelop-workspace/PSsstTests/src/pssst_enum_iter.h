@@ -39,7 +39,7 @@ using ule = std::underlying_type_t<E>;
 
 template<typename E>
 constexpr E wrap_increment(std::false_type) noexcept{
-  return E{0}; // assume zero start
+  return E{}; // assume zero start
 }
 template<typename E>
 constexpr E wrap_increment(std::true_type) noexcept{
