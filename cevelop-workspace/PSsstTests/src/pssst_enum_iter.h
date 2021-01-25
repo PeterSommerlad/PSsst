@@ -105,7 +105,7 @@ constexpr E operator--(E &e) noexcept {
 	if (enum_has_limit<E>{} && e == begin){ // start is inclusive
 	  return e = wrap_decrement<E>(val,typename enum_has_limit<E>::type{});
 	}
-    pssst_assert(val > std::numeric_limits<decltype(val)>::min());
+    pssst_assert(std::is_unsigned<decltype(val)>::value || val > std::numeric_limits<decltype(val)>::min()); // prevent wrapping UB
 	--val;
 	e = static_cast<E>(val);
 	return e;
