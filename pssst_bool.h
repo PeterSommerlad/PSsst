@@ -1,8 +1,7 @@
-#ifndef SRC_BOOLEAN_H_
-#define SRC_BOOLEAN_H_
+#ifndef SRC_PSSST_BOOL_H_
+#define SRC_PSSST_BOOL_H_
 
-#include "pssst.h"
-
+#include <type_traits>
 
 namespace pssst {
 // a better bool?
@@ -46,15 +45,8 @@ struct Bool {
 static_assert(sizeof(Bool)==sizeof(bool));
 static_assert(std::is_trivially_copyable_v<Bool>);
 static_assert(std::is_trivially_destructible_v<Bool>);
-
-// comparisons with our non-integral Bool as result
-template <typename U>
-using OrderB = Order<U,Bool>;
-template <typename U>
-using EqB = Eq<U,Bool>;
-
 }
 
 
 
-#endif /* SRC_BOOLEAN_H_ */
+#endif /* SRC_PSSST_BOOL_H_ */

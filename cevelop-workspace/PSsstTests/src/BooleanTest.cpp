@@ -1,8 +1,8 @@
-#include "Boolean.h"
 #include "BooleanTest.h"
 #include "cute.h"
 #include <initializer_list>
 #include <utility>
+#include "pssst.h"
 
 using namespace pssst;
 struct BoolTest {
@@ -117,7 +117,7 @@ struct BoolTest {
 		ASSERT_EQUAL(1,i);
 	}
 
-    struct Num:strong<int,Num,OrderB>{};
+    struct Num: strong <int,Num,Order>{};
 
     static_assert(Num{3} == Num{3});
     static_assert(not(Num{3} != Num{3}));

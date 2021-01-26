@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <utility>
 #include <stdexcept>
-
+#include "pssst_bool.h"
 namespace pssst{
 
 namespace detail__ {
@@ -124,7 +124,7 @@ struct default_zero{
 // assumes comparisons won't throw as well as constructing Bool
 
 // the following would change with operator<=>, but we target C++17 for now
-template <typename U, typename Bool=bool>
+template <typename U, typename Bool=::pssst::Bool>
 struct Eq{
   friend constexpr Bool
   operator==(U const &l, U const& r) noexcept {
@@ -159,6 +159,12 @@ struct Order: Eq<U,Bool> {
     return !(l < r);
   }
 };
+// comparisons with regular bool as result
+template <typename U>
+using OrderB = Order<U,bool>;
+template <typename U>
+using EqB = Eq<U,bool>;
+
 
 // unary plus and minus
 // plus only for completeness, because it is a no-op for strong types (no promotion)

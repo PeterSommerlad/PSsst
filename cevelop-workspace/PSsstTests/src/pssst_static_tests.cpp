@@ -8,12 +8,25 @@ struct Y {};
 struct X:Y{int v;};
 static_assert(needsbaseinit<X>{},"needsbasinit with empty class false");
 
-template <typename U, typename = std::void_t<>>
+template <typename U, typename = void>
 struct is_vector_space : std::false_type{};
 template <typename U>
 struct is_vector_space<U, std::void_t<decltype(U::origin)>> : std::true_type{};
 template<typename U>
 constexpr inline  bool is_vector_space_v=is_vector_space<U>::value;
+
+template<typename U, typename=void>
+struct doesnt_compile_less_twice:std::true_type{};
+
+struct testless:strong<int,testless,Order>{};
+
+template<typename U>
+struct doesnt_compile_less_twice<U,std::void_t<decltype(U{}< U{} < U{})>>:std::false_type{};
+
+#define dc(U,...) struct doesnt_co
+
+
+static_assert(doesnt_compile_less_twice<testless>{});
 
 
 
@@ -55,8 +68,8 @@ struct dummy{int i;};
 static_assert(is_ebo_v<Add<dummy>>,"Add should be EBO enabled");
 static_assert(is_ebo_v<Sub<dummy>>,"ScalarMult should be EBO enabled");
 static_assert(is_ebo_v<Out<dummy>>,"Out should be EBO enabled");
+//static_assert(is_ebo_v<Eq<dummy>>,"Eq should be EBO enabled");
 static_assert(is_ebo_v<Order<dummy>>,"Order should be EBO enabled");
-static_assert(is_ebo_v<Eq<dummy>>,"Eq should be EBO enabled");
 static_assert(is_ebo_v<BitOps<dummy>>,"Eq should be EBO enabled");
 static_assert(is_ebo_v<ShiftOps<dummy>>,"Eq should be EBO enabled");
 static_assert(is_ebo_v<Inc<dummy>>,"Eq should be EBO enabled");

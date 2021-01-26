@@ -66,3 +66,26 @@ For a C++14 version of the framework the lack of these features means that one n
 ```C++
 // TODO example for C++14 branch
 ```
+
+### List of Mix-in Bases
+The following CRTP class templates provide operators that you can pick and choose for strong types with PSsst. NB, binary operators always include corresponding combined assignment operator:
+   * Eq: `==` `!=`
+   * Order: Eq and `< <= > >=`
+   * UPlus: unary `+` (not useful for wrapped built-in types)
+   * UMinus: unary `-`, negation
+   * Inc: `++` increment (pre and post)
+   * Dec: `--` decrement (pre and post)
+   * BitOps: unary `~` binary `| & ^` underlying value type must be unsigned type
+   * ShiftOps: `>>` `<<` default for rhs number of bits is `unsigned`
+   * Add: binary `+`
+   * Sub: binary `-`
+   * Abs: calling std::abs or another abs function picked by ADL (allows wrapping a wrapper)
+   * Rounding: provides `<cmath>` functions converting floating points to integral values
+   * ExpLog: provides `<cmath>` functions for exponentiation and logarithms. result is corresponding floating point value
+   * Root: provides `<cmath>` `sqrt` and `cbrt`. result is corresponding floating point value
+   * Trigonometric: provides `<cmath>` `sin cos tan asin acos atan` functions, result is corresponding floating point value
+   * Out: `std::ostream&` output operator. static members in strong type with names `prefix` and `suffix` can control formatting
+   * ScalarMult
+   
+list of pre-combined aliases:
+
