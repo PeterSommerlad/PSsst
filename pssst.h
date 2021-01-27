@@ -28,8 +28,12 @@ constexpr std::remove_reference_t<T> membertype(T x) {
 // meta-binder for second template argument
 template<typename B, template<typename...>class T>
 struct bind2{
-  template<typename A, typename ...C>
-  using apply=T<A,B,C...>;
+// the following more generic impl only works on gcc...
+//  template<typename A, typename ...C>
+//  using apply=T<A,B,C...>;
+// this simpler and sufficient version also supported by msvc and clang
+  template<typename A>
+  using apply=T<A,B>;
 };
 template <typename V, typename TAG>
 struct holder {
@@ -524,7 +528,8 @@ using ScalarMult=detail__::bind2<BASE,ScalarMultImpl>;
 // or for typical value types one below
 
 template<typename TAG>
-using ScalarMult_d= ScalarMult<double>::apply<TAG>;
+//using ScalarMult_d= ScalarMult<double>::apply<TAG>;
+using ScalarMult_d= ScalarMultImpl<TAG,double>;
 template<typename TAG>
 using ScalarMult_f= ScalarMultImpl<TAG,float>;
 template<typename TAG>
@@ -540,7 +545,7 @@ using ScalarMult_ll= ScalarMultImpl<TAG,long long>;
 
 // LinearImpl needs to be a class to be able to pass it as template template argument to bind2
 template <typename V, typename BASE> // can not use underlying_value_type, because V is still incomplete
-struct LinearImpl: ops<V, Additive, ScalarMult<BASE>::template apply, Order, Value, Out>{};
+struct LinearImpl: ops<V, Additive, detail__::bind2<BASE,ScalarMultImpl>::template apply, Order, Value, Out>{};
 // unfortunately clang and msvc bail on using an alias instead...
 //using LinearImpl = ops<V, Additive, ScalarMult<BASE>::template apply, Order, Value, Out>;
 template <typename BASE> // can not use underlying_value_type, because V is still incomplete
@@ -571,10 +576,14 @@ struct create_vector_space : ops<ME,Order, Value, Out>{
   using vector_space=ME;
   using value_type=underlying_value_type<affine_space>;
   static_assert(std::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
-  static inline constexpr vector_space origin {retval<affine_space>(ZEROFUNC{}())};
+#if defined(__GNUG__) && ! defined(__clang__)
+  static inline constexpr auto origin =vector_space{retval<affine_space>(ZEROFUNC{}())};
+#else
+  static const vector_space origin;// {retval<affine_space>(ZEROFUNC{}())};
+#endif
   // the following two constructors are deliberately implicit:
-  constexpr create_vector_space(affine_space v=ZEROFUNC{}()):value{v}{}
-  constexpr create_vector_space(underlying_value_type<affine_space> v):value{retval<affine_space>(v)}{}
+  constexpr create_vector_space(affine_space v=ZEROFUNC{}()) noexcept:value{v}{}
+  constexpr create_vector_space(underlying_value_type<affine_space> v) noexcept:value{retval<affine_space>(v)}{}
 
   affine_space value{ZEROFUNC{}()};
 
@@ -646,6 +655,12 @@ struct create_vector_space : ops<ME,Order, Value, Out>{
   }
 };
 
+#if defined(__GNUG__) && not defined(__clang__)
+#else
+template <typename ME, typename AFFINE, typename ZEROFUNC>
+typename create_vector_space<ME,AFFINE,ZEROFUNC>::vector_space constexpr
+    create_vector_space<ME,AFFINE,ZEROFUNC>::origin{};
+#endif
 
 // must be vector spaces from same affine space, e.g. celsius to kelvin
 // TODO: conversion with scaling factor, e.g. fahrenheit to celsius

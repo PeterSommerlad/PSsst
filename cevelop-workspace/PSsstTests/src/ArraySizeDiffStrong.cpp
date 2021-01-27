@@ -14,7 +14,7 @@ using namespace pssst;
 struct Diff: strong<std::ptrdiff_t,Diff,Linear<std::ptrdiff_t>::apply>{
 };
 struct Size: create_vector_space<Size,Diff> {
-	constexpr Size() noexcept = default;
+	constexpr Size()  = default;
 	constexpr Size(size_t val)
 	:Size{Diff{static_cast<std::ptrdiff_t>(val)}}{}
 	constexpr Size(Diff val)

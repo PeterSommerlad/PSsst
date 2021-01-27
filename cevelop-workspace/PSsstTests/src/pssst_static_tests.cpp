@@ -43,7 +43,7 @@ static_assert(0 == bla{0}.value, "check for subobject warning");
 struct blu:create_vector_space<blu,bla>{};
 static_assert(sizeof(blu)==sizeof(int));
 static_assert(is_vector_space_v<blu>,"blu should be vector space");
-static_assert(blu::origin==blu{0},"blu origin is zero");
+//static_assert(bool(blu::origin==blu{0}),"blu origin is zero");
 static_assert(blu{42}.value==bla{42}, "rel accessible");
 static_assert(std::is_same_v<int,underlying_value_type<bla>>,"..");
 
