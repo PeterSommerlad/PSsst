@@ -11,7 +11,7 @@
 
 namespace test {
 using namespace pssst;
-struct Diff: strong<std::ptrdiff_t,Diff,detail__::bind2<std::ptrdiff_t,Linear>::template apply>{
+struct Diff: strong<std::ptrdiff_t,Diff,Linear<std::ptrdiff_t>::apply>{
 };
 struct Size: create_vector_space<Size,Diff> {
 	constexpr Size() noexcept = default;

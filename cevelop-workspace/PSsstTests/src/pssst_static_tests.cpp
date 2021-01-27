@@ -23,7 +23,9 @@ struct testless:strong<int,testless,Order>{};
 template<typename U>
 struct doesnt_compile_less_twice<U,std::void_t<decltype(U{}< U{} < U{})>>:std::false_type{};
 
-#define dc(U,...) struct doesnt_co
+#define expr(...) std::void_t<decltype(__VA_ARGS__)>
+
+#define dc(T,...) template<typename U> struct doesnt_compile_less_twice<U,expr(__VA_ARGS__)>:std::false_type{};
 
 
 static_assert(doesnt_compile_less_twice<testless>{});
@@ -34,7 +36,7 @@ static_assert(!is_vector_space_v<int>,"int is no absolute unit");
 
 
 
-struct bla:strong<int,bla,detail__::bind2<int,Linear>::template apply>{};
+struct bla:strong<int,bla,detail__::bind2<int,LinearImpl>::apply>{};
 static_assert(sizeof(bla)==sizeof(int));
 static_assert(!is_vector_space_v<bla>,"bla is absolute?");
 static_assert(0 == bla{0}.value, "check for subobject warning");
@@ -66,28 +68,36 @@ constexpr inline bool is_ebo_v=is_ebo<U>::value;
 
 struct dummy{int i;};
 static_assert(is_ebo_v<Add<dummy>>,"Add should be EBO enabled");
-static_assert(is_ebo_v<Sub<dummy>>,"ScalarMult should be EBO enabled");
+static_assert(is_ebo_v<Sub<dummy>>,"Sub should be EBO enabled");
 static_assert(is_ebo_v<Out<dummy>>,"Out should be EBO enabled");
 //static_assert(is_ebo_v<Eq<dummy>>,"Eq should be EBO enabled");
 static_assert(is_ebo_v<Order<dummy>>,"Order should be EBO enabled");
-static_assert(is_ebo_v<BitOps<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<ShiftOps<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<Inc<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<Dec<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<UPlus<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<UMinus<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<Value<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<Rounding<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<Abs<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<ExpLog<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<Root<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<Trigonometric<dummy>>,"Eq should be EBO enabled");
-static_assert(is_ebo_v<ScalarModulo<dummy,int>>,"Eq should be EBO enabled");
+static_assert(is_ebo_v<BitOps<dummy>>,"BitOps should be EBO enabled");
+static_assert(is_ebo_v<ShiftOps<dummy>>,"ShiftOps should be EBO enabled");
+static_assert(is_ebo_v<Inc<dummy>>,"Inc should be EBO enabled");
+static_assert(is_ebo_v<Dec<dummy>>,"Dec should be EBO enabled");
+static_assert(is_ebo_v<UPlus<dummy>>,"UPlus should be EBO enabled");
+static_assert(is_ebo_v<UMinus<dummy>>,"UMinus should be EBO enabled");
+static_assert(is_ebo_v<Value<dummy>>,"Value should be EBO enabled");
+static_assert(is_ebo_v<Rounding<dummy>>,"Rounding should be EBO enabled");
+static_assert(is_ebo_v<Abs<dummy>>,"Abs should be EBO enabled");
+static_assert(is_ebo_v<ExpLog<dummy>>,"ExpLog should be EBO enabled");
+static_assert(is_ebo_v<Root<dummy>>,"Root should be EBO enabled");
+static_assert(is_ebo_v<Trigonometric<dummy>>,"Trigonometric should be EBO enabled");
+static_assert(is_ebo_v<ScalarModulo<dummy,unsigned>>,"ScalarModulo should be EBO enabled");
+static_assert(is_ebo_v<ScalarMult<double>::apply<dummy>>,"ScalarModulo should be EBO enabled");
 
 struct dummy_d:ops<dummy,Sub,Add> {
 	double v;
 };
 static_assert(sizeof(double)==sizeof(dummy_d),"dummy_d should be same size as double");
+
+struct tag;
+static_assert(std::is_same_v<LinearImpl<tag,double>, Linear_d<tag>>);
+static_assert(!std::is_same_v<LinearImpl<tag,double>, Linear_d<struct tag2>>);
+static_assert(std::is_same_v<LinearImpl<tag,int>, Linear_i<tag>>);
+static_assert(!std::is_same_v<LinearImpl<tag,int>, Linear_i<struct tag2>>);
+
 }
 
 

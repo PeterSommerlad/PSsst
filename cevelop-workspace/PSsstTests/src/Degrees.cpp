@@ -7,9 +7,11 @@ using namespace pssst;
 // affine space: degrees (K and C)
 struct degrees:
 #ifdef USE_STRONG
-		strong<double,degrees>,
+		strong<double,
+#else
+		ops<
 #endif
-		Linear<degrees,double>, ops<degrees,Out>{
+		degrees,Linear<double>::apply>{
 #ifndef USE_STRONG
 			explicit constexpr
 			degrees(double val) noexcept

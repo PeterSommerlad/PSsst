@@ -426,7 +426,7 @@ struct Trigonometric{
 
 // shorthand for usual additive operations:
 template <typename V>
-using Additive=ops<V,UPlus,UMinus,Abs,Add,Sub,Inc,Dec>;
+using Additive=ops<V,UMinus,Abs,Add,Sub,Inc,Dec>;
 
 // output is simple. But can be made domain specific by providing
 // the static constexpr members prefix and/or suffix in the strong type
@@ -472,7 +472,7 @@ struct ScalarModulo<R,BASE,true>{
   R&
   operator%=(R l, BASE const &r) {
     auto &[vl]=l;
-    pssst_assert(r != decltype(r){});
+    pssst_assert(r != decltype(r){}); // division by zero
     vl %= r;
     return l;
   }
@@ -518,13 +518,13 @@ struct ScalarMultImpl : ScalarModulo<R,BASE,std::is_integral_v<BASE> && not std:
 };
 
 // scalar multiplication must know the scalar type
-template<typename TAG,typename BASE=double>
+template<typename BASE>
 using ScalarMult=detail__::bind2<BASE,ScalarMultImpl>;
-// usage: strong<unsigned,TAG,ScalarMult<unsigned>::template apply,Add>
+// usage: strong<unsigned,TAG,ScalarMult<unsigned>::apply,Add>
 // or for typical value types one below
 
 template<typename TAG>
-using ScalarMult_d= ScalarMultImpl<TAG,double>;
+using ScalarMult_d= ScalarMult<double>::apply<TAG>;
 template<typename TAG>
 using ScalarMult_f= ScalarMultImpl<TAG,float>;
 template<typename TAG>
@@ -537,22 +537,32 @@ using ScalarMult_ll= ScalarMultImpl<TAG,long long>;
 
 
 // a 1-d linear space without origin (or implicit zero)
+
+// LinearImpl needs to be a class to be able to pass it as template template argument to bind2
 template <typename V, typename BASE> // can not use underlying_value_type, because V is still incomplete
-using Linear=ops<V, Additive, ScalarMult<BASE>::template apply, Order, Value, Out>;
+struct LinearImpl: ops<V, Additive, ScalarMult<BASE>::template apply, Order, Value, Out>{};
+// unfortunately clang and msvc bail on using an alias instead...
+//using LinearImpl = ops<V, Additive, ScalarMult<BASE>::template apply, Order, Value, Out>;
+template <typename BASE> // can not use underlying_value_type, because V is still incomplete
+using Linear=detail__::bind2<BASE,LinearImpl>;
 // usage: strong<unsigned,TAG,Linear<unsigned>::template apply,Add>
 // or by directly inheriting for type TAG: struct TAG: Linear<TAG,unsigned>{ unsigned value;}
 // or for typical value types one below for use as strong<> or ops<> template arguments
 
+// clang and msvc do not seem to like the following style...
 template<typename TAG>
-using Linear_d= Linear<TAG,double>;
+//using Linear_d= Linear<double>::template apply<TAG>;
+// but this works:
+using Linear_d= LinearImpl<TAG,double>;
+
 template<typename TAG>
-using Linear_f= Linear<TAG,float>;
+using Linear_f= LinearImpl<TAG,float>;
 template<typename TAG>
-using Linear_ld= Linear<TAG,long double>;
+using Linear_ld= LinearImpl<TAG,long double>;
 template<typename TAG>
-using Linear_i= Linear<TAG,int>;
+using Linear_i= LinearImpl<TAG,int>;
 template<typename TAG>
-using Linear_ll= Linear<TAG,long long>;
+using Linear_ll= LinearImpl<TAG,long long>;
 
 // 1 dimensional vector space = Linear + origin(= ZEROFUNC{}())
 template <typename ME, typename AFFINE, typename ZEROFUNC=default_zero<AFFINE>>
