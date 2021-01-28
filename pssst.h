@@ -8,7 +8,6 @@
 #include <type_traits>
 #include <utility>
 #include <stdexcept>
-#include "pssst_bool.h"
 namespace pssst{
 
 namespace detail__ {
@@ -28,7 +27,8 @@ constexpr std::remove_reference_t<T> membertype(T x) {
 // meta-binder for second template argument
 template<typename B, template<typename...>class T>
 struct bind2{
-// the following more generic impl only works on gcc...
+// the following more generic impl only works on gcc... and is illegal
+// http://eel.is/c++draft/temp.res.general#6.3
 //  template<typename A, typename ...C>
 //  using apply=T<A,B,C...>;
 // this simpler and sufficient version also supported by msvc and clang
@@ -120,6 +120,47 @@ struct default_zero{
 #pragma GCC diagnostic pop
   }
 };
+
+
+// a better Bool than bool, used for comparisons
+struct Bool {
+    constexpr Bool() noexcept=default;
+    constexpr Bool(bool const b) noexcept :
+        val { b } {
+    }
+        friend constexpr Bool
+        operator==(Bool const &l, Bool const& r) noexcept {
+            return Bool{l.val == r.val};
+        }
+        friend constexpr Bool
+        operator!=(Bool const &l, Bool const& r) noexcept {
+            return !(l==r);
+        }
+        friend constexpr Bool
+        operator !(Bool const &l){
+            return Bool{! l.val};
+        }
+    // convert from pointers
+    template <typename T>
+    constexpr Bool(T * const x) noexcept :
+        val { x!= nullptr }{
+        }
+    constexpr Bool(std::nullptr_t) noexcept {}
+    // other conversion attempts are not allowed
+    template <typename T, typename = std::enable_if_t<
+                        std::is_constructible<bool,T>::value
+                        && std::is_class_v<
+                             std::remove_cv_t<std::remove_reference_t<T>>
+                             >> >
+    constexpr Bool(T const &x) noexcept
+    :Bool(static_cast<bool>(x)){}
+    constexpr explicit operator bool() const noexcept {
+        return val;
+    }
+    bool val{};
+};
+
+
 
 // Operator Mix-in templates. contain operator functions as hidden friends
 // rely on structured bindings, so the sole value member must be public
@@ -576,7 +617,7 @@ struct create_vector_space : ops<ME,Order, Value, Out>{
   using vector_space=ME;
   using value_type=underlying_value_type<affine_space>;
   static_assert(std::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
-#if defined(__GNUG__) && ! defined(__clang__)
+#if ! defined(_MSC_VER) && ! defined(__clang__)
   static inline constexpr auto origin =vector_space{retval<affine_space>(ZEROFUNC{}())};
 #else
   static const vector_space origin;// {retval<affine_space>(ZEROFUNC{}())};
@@ -655,11 +696,10 @@ struct create_vector_space : ops<ME,Order, Value, Out>{
   }
 };
 
-#if defined(__GNUG__) && not defined(__clang__)
-#else
+#if  defined(_MSC_VER) || defined(__clang__)
 template <typename ME, typename AFFINE, typename ZEROFUNC>
 typename create_vector_space<ME,AFFINE,ZEROFUNC>::vector_space constexpr
-    create_vector_space<ME,AFFINE,ZEROFUNC>::origin{};
+    create_vector_space<ME,AFFINE,ZEROFUNC>::origin{{retval<create_vector_space<ME,AFFINE,ZEROFUNC>::affine_space>(ZEROFUNC{}())}};
 #endif
 
 // must be vector spaces from same affine space, e.g. celsius to kelvin

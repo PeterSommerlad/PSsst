@@ -41,7 +41,7 @@
                             							
                             <tool id="cdt.managedbuild.tool.macosx.c.linker.macosx.exe.debug.674062888" name="MacOS X C Linker" superClass="cdt.managedbuild.tool.macosx.c.linker.macosx.exe.debug"/>
                             							
-                            <tool command="g++" id="cdt.managedbuild.tool.macosx.cpp.linker.macosx.exe.debug.685585290" name="MacOS X C++ Linker" superClass="cdt.managedbuild.tool.macosx.cpp.linker.macosx.exe.debug">
+                            <tool command="clang++" id="cdt.managedbuild.tool.macosx.cpp.linker.macosx.exe.debug.685585290" name="MacOS X C++ Linker" superClass="cdt.managedbuild.tool.macosx.cpp.linker.macosx.exe.debug">
                                 								
                                 <inputType id="cdt.managedbuild.tool.macosx.cpp.linker.input.1181978181" superClass="cdt.managedbuild.tool.macosx.cpp.linker.input">
                                     									
@@ -67,7 +67,7 @@
                             							
                             <tool id="cdt.managedbuild.tool.gnu.archiver.macosx.base.548223218" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.macosx.base"/>
                             							
-                            <tool command="g++ " id="cdt.managedbuild.tool.gnu.cpp.compiler.macosx.exe.debug.458200307" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.macosx.exe.debug">
+                            <tool command="clang++ " id="cdt.managedbuild.tool.gnu.cpp.compiler.macosx.exe.debug.458200307" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.macosx.exe.debug">
                                 								
                                 <option id="gnu.cpp.compilermacosx.exe.debug.option.optimization.level.408160782" name="Optimization Level" superClass="gnu.cpp.compilermacosx.exe.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
                                 								

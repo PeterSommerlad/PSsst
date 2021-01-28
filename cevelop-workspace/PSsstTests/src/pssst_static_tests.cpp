@@ -1,6 +1,15 @@
 #include "pssst.h"
 namespace pssst {
 namespace testing___{
+
+// test Bool properties
+static_assert(sizeof(Bool)==sizeof(bool));
+static_assert(std::is_trivially_copyable_v<Bool>);
+static_assert(std::is_trivially_destructible_v<Bool>);
+
+
+
+
 using ::pssst::underlying_value_type;
 static_assert(!needsbaseinit<int>{},"needsbasinit for built-in");
 
