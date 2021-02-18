@@ -7,12 +7,9 @@ using namespace pssst;
 // affine space: degrees (K and C)
 struct degrees:
 #ifdef USE_STRONG
-		strong<double,
+		Linear<double, Out>
 #else
-		ops<
-#endif
-		degrees,Linear<double>::apply>{
-#ifndef USE_STRONG
+		LinearOps<degrees,double, Out>{
 			explicit constexpr
 			degrees(double val) noexcept
 			:value{val}{}
@@ -44,7 +41,7 @@ static_assert(sizeof(double)==sizeof(Kelvin));
 
 struct CelsiusZero{
 	constexpr degrees operator()() const noexcept{
-		return retval<degrees>(273.15);
+		return degrees{273.15};
 	}
 };
 
@@ -67,11 +64,11 @@ struct Celsius:create_vector_space<Celsius,degrees,CelsiusZero> {
 static_assert(sizeof(degrees)==sizeof(Celsius));
 
 constexpr Celsius fromKelvin(Kelvin k) noexcept {
-	return Celsius{k.value-(value(Celsius::origin) - value(Kelvin::origin))};
+	return convertTo<Celsius>(k);//.value-(value(Celsius::origin()) - value(Kelvin::origin()))};
 }
 
 constexpr Kelvin fromCelsius(Celsius c)noexcept{
-	return Kelvin{c.value-(value(Kelvin::origin)- value(Celsius::origin))};
+	return convertTo<Kelvin>(c);//{c.value-(value(Kelvin::origin())- value(Celsius::origin()))};
 }
 
 struct otherdegrees:ops<otherdegrees,Order,Out>{

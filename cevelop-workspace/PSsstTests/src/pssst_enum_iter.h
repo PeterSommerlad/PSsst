@@ -105,11 +105,11 @@ constexpr E operator*()noexcept {
 }
 template<typename E, typename = std::enable_if_t<detail__::enum_has_limit<E>{}>>
 constexpr inner_detail__::enum_iterator<E> begin(E e) noexcept {
-	return retval<inner_detail__::enum_iterator<E>>(e);
+	return detail__::retval<inner_detail__::enum_iterator<E>>(e);
 }
 template<typename E, typename = std::enable_if_t<detail__::enum_has_limit<E>{}>>
 constexpr inner_detail__::enum_iterator<E> end(E ) noexcept {
-	return retval<inner_detail__::enum_iterator<E>>(E::limit__);
+	return detail__::retval<inner_detail__::enum_iterator<E>>(E::limit__);
 }
 } // enum_iteration
 #undef pssst_assert

@@ -8,14 +8,12 @@ static_assert(std::is_trivially_copyable_v<Bool>);
 static_assert(std::is_trivially_destructible_v<Bool>);
 
 
-
-
 using ::pssst::underlying_value_type;
-static_assert(!needsbaseinit<int>{},"needsbasinit for built-in");
+static_assert(!detail__::needsbaseinit<int>{},"needsbasinit for built-in");
 
 struct Y {};
 struct X:Y{int v;};
-static_assert(needsbaseinit<X>{},"needsbasinit with empty class false");
+static_assert(detail__::needsbaseinit<X>{},"needsbasinit with empty class false");
 
 template <typename U, typename = void>
 struct is_vector_space : std::false_type{};
@@ -24,6 +22,8 @@ struct is_vector_space<U, std::void_t<decltype(U::origin)>> : std::true_type{};
 template<typename U>
 constexpr inline  bool is_vector_space_v=is_vector_space<U>::value;
 
+
+/// trying anti-compile tests... badly so far
 template<typename U, typename=void>
 struct doesnt_compile_less_twice:std::true_type{};
 
@@ -38,14 +38,14 @@ struct doesnt_compile_less_twice<U,std::void_t<decltype(U{}< U{} < U{})>>:std::f
 
 
 static_assert(doesnt_compile_less_twice<testless>{});
-
+//----------
 
 
 static_assert(!is_vector_space_v<int>,"int is no absolute unit");
 
 
 
-struct bla:strong<int,bla,detail__::bind2<int,LinearImpl>::apply>{};
+struct bla:Linear<int,bla>{};
 static_assert(sizeof(bla)==sizeof(int));
 static_assert(!is_vector_space_v<bla>,"bla is absolute?");
 static_assert(0 == bla{0}.value, "check for subobject warning");
@@ -56,6 +56,20 @@ static_assert(is_vector_space_v<blu>,"blu should be vector space");
 static_assert(blu{42}.value==bla{42}, "rel accessible");
 static_assert(std::is_same_v<int,underlying_value_type<bla>>,"..");
 
+constexpr bla x{42};
+constexpr bla eightyfour{84};
+static_assert(value(-x) == -value(x));
+//static_assert(abs(-x) == abs(x)); // std::abs not yet constexpr
+static_assert(x == x);
+static_assert(x != -x);
+static_assert(x + x == eightyfour);
+static_assert(x - x == bla{0});
+static_assert(x -  -x == eightyfour);
+static_assert(x * 2 == eightyfour);
+static_assert(2 * x == eightyfour);
+static_assert(eightyfour / 2 == x);
+static_assert(eightyfour / x == 2);
+static_assert(x % 5 == bla{2});
 
 // trait: is_ebo
 namespace detail{
@@ -101,11 +115,51 @@ struct dummy_d:ops<dummy,Sub,Add> {
 };
 static_assert(sizeof(double)==sizeof(dummy_d),"dummy_d should be same size as double");
 
-struct tag;
-static_assert(std::is_same_v<LinearImpl<tag,double>, Linear_d<tag>>);
-static_assert(!std::is_same_v<LinearImpl<tag,double>, Linear_d<struct tag2>>);
-static_assert(std::is_same_v<LinearImpl<tag,int>, Linear_i<tag>>);
-static_assert(!std::is_same_v<LinearImpl<tag,int>, Linear_i<struct tag2>>);
+namespace test_ArithModulo{
+
+struct wrong:strong<double,wrong>,ArithMultImpl<wrong,int>, Eq<wrong>{};
+static_assert(detail__::has_check_base_v<wrong>);
+// fails to compile due to check that multiplication base is same as value type
+// static_assert(wrong{1} == wrong{1}/wrong{1});
+// static_assert(wrong{1} == wrong{1}*wrong{1});
+// static_assert(wrong{1} == wrong{1}%wrong{1});
+enum bla:int{};
+constexpr bla operator%(bla lhs,bla rhs){ return bla{};}
+static_assert(detail__::supports_modulo_v<bla>);
+
+}
+
+struct liter : ops<liter,Additive,Order,Out>{
+    // needs ctor to avoid need for extra {} below
+    constexpr explicit liter(double lit):l{lit}{};
+    double l{};
+};
+static_assert(sizeof(liter)==sizeof(double)); // ensure empty bases are squashed
+static_assert(std::is_trivially_copyable_v<liter>); // ensure efficient argument passing
+static_assert(not detail__::needsbaseinit<liter>{},"does liter need base init?");
+
+
+
+}
+
+namespace testWithEnum {
+
+enum ue : unsigned {};
+constexpr
+ue operator |(ue l, ue r){ return ue{unsigned(l)|unsigned(r)}; }
+
+struct sue : strong<ue,sue,BitOps, Value>{};
+
+static_assert(0 == value(sue{} | sue{}));
+
+enum ie : int {};
+constexpr
+ie operator |(ie l, ie r){ return ie{int(l)|int(r)}; }
+
+struct sie : strong<ie,sie,BitOps, Value>{};
+
+// fails to compile as expected: error: static assertion failed: bitops are only be enabled for unsigned types
+//static_assert(0 == value(sie{} | sie{}));
 
 }
 

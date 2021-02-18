@@ -7,13 +7,14 @@
 using namespace pssst;
 struct U_int16 :
 #ifdef USE_STRONG
-		strong<std::uint16_t,U_int16>,
+		strong<std::uint16_t,
+#else
+				 ops<
 #endif
-				 ops<U_int16, Eq, Out, BitOps, ShiftOps, ShiftOpsSym>
+				 U_int16, Eq, Out, BitOps, ShiftOps, ShiftOpsSym>
 {
 #ifndef USE_STRONG
-	constexpr explicit U_int16(std::uint16_t val) noexcept :value{val}{}
-	constexpr U_int16() noexcept = default;
+	constexpr explicit U_int16(std::uint16_t val={}) noexcept :value{val}{}
 	std::uint16_t value{};
 #endif
 };

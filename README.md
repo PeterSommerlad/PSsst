@@ -85,7 +85,20 @@ The following CRTP class templates provide operators that you can pick and choos
    * Root: provides `<cmath>` `sqrt` and `cbrt`. result is corresponding floating point value
    * Trigonometric: provides `<cmath>` `sin cos tan asin acos atan` functions, result is corresponding floating point value
    * Out: `std::ostream&` output operator. static members in strong type with names `prefix` and `suffix` can control formatting
-   * ScalarMult
+   * ScalarMult: binary `* /` with a scalar value, `%` is provided if the scalar type is an integer. 
+     It is unchecked, if the scalar matches the type of the member, but highly recommended to do so.
+     this is a bit tricky to use in general, because it has two template parameters, the second one for the scalar type. Using it in the list of operations templates looks like `ScalarMult<double>::apply`. Therefore, aliases for the common cases are provided:
+      * `ScalarMult_d= ScalarMultImpl<TAG,double>;`
+      * `ScalarMult_f= ScalarMultImpl<TAG,float>;`
+      * `ScalarMult_ld= ScalarMultImpl<TAG,long double>;`
+      * `ScalarMult_i= ScalarMultImpl<TAG,int>;
+      * `ScalarMult_ll= ScalarMultImpl<TAG,long long>;` 
+   * ScalarModulo: `%` base class of ScalarMult if the scalar type is integral. same issue with ScalarMult about 2nd template argument handled there, no separate aliases for it.
+   * Additive: `ops<V,UMinus,Abs,Add,Sub,Inc,Dec>`
+   * Linear: similar issue as with ScalarMult, since it needs to promote
    
 list of pre-combined aliases:
 
+
+
+### A better `Bool` than `bool`

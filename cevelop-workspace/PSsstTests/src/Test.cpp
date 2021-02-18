@@ -16,6 +16,7 @@
 #include "BitOperationsTest.h"
 #include <string>
 #include "EnumOperators.h"
+#include "ArithmeticOperationsTest.h"
 
 
 using namespace pssst;
@@ -141,6 +142,8 @@ bool runAllTests(int argc, char const *argv[]) {
 	success &= runner(BooleanTest, "BooleanTest");
 	cute::suite EnumOperators = make_suite_EnumOperators();
 	success &= runner(EnumOperators, "EnumOperators");
+  cute::suite ArithmeticOperationsTest = make_suite_ArithmeticOperationsTest();
+  success &= runner(ArithmeticOperationsTest, "ArithmeticOperationsTest");
 	return success;
 }
 

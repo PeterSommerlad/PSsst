@@ -8,10 +8,117 @@
 #include <iterator>
 #include <stdexcept>
 #include <iterator>
+#include <memory>
+#include <vector>
+
+
+
+namespace vec {
+// make a vector adapter with strongly typed ctors for demonstrating to Peter Dimov what I thought about.
+//using namespace pssst;
+struct Capacity{ size_t value;};
+struct Size{ size_t value;};
+namespace detail__{
+
+template<typename T >
+struct HasIteratorTraitImpl{
+    template<typename I> static double e(...);
+    template<typename I> static char e(typename std::iterator_traits<I>::iterator_category*);
+
+static inline constexpr bool value = sizeof(HasIteratorTraitImpl::e<T>(nullptr))==sizeof(char);
+};
+
+template<typename T>
+constexpr bool  HasIteratorTrait = HasIteratorTraitImpl<T>::value;
+
+static_assert(!HasIteratorTrait<int>);
+static_assert(HasIteratorTrait<int*>);
+
+
+
+template<typename T, bool=HasIteratorTrait<T>>
+constexpr bool isInputIterator = std::is_convertible_v<typename std::iterator_traits<T>::iterator_category,std::input_iterator_tag>;
+template<typename T>
+constexpr bool isInputIterator<T,false> = false;
+
+template<typename IT, typename V, bool = HasIteratorTrait<IT>>
+constexpr bool IteratorHasValueType = false;
+template<typename IT, typename V>
+constexpr bool IteratorHasValueType<IT,V,true> = std::is_constructible_v<V,typename std::iterator_traits<IT>::value_type>;
+
+}
+
+
+template<typename T, typename Alloc=std::allocator<T>>
+struct Vec: std::vector<T,Alloc>{
+  using base=std::vector<T,Alloc>;
+  using allocator_type = typename base::allocator_type;
+  using value_type = typename base::value_type;
+
+  Vec() noexcept = default;
+  explicit Vec(allocator_type const &a) noexcept :base{a}{}
+  explicit Vec(Size sz,allocator_type const &a=allocator_type{})
+  :base{sz.value,a}{}
+  explicit Vec(Capacity cap,allocator_type const &a=allocator_type{})
+  :base{a}{base::reserve(cap.value);}
+  Vec(Size sz, const value_type& value,
+     const allocator_type& a = allocator_type())
+  :base{sz.value,value,a}{}
+  template<typename _InputIterator>
+   Vec(_InputIterator first,
+       std::enable_if_t<detail__::isInputIterator<_InputIterator>
+       && detail__::IteratorHasValueType<_InputIterator,T>,_InputIterator> last,
+       const allocator_type& a = allocator_type())
+   : base{first,last,a}{}
+
+};
+
+template<typename T>
+Vec(Size,T const &) -> Vec<T>;
+
+template<typename _InputIterator>
+ Vec(_InputIterator first,
+     std::enable_if_t<detail__::isInputIterator<_InputIterator>,_InputIterator> last) -> Vec<typename std::iterator_traits<_InputIterator>::value_type>;
+
+
+void demonstrateVecWithCapacity(){
+  Vec<int> v{Capacity{100}};
+  ASSERT_EQUAL(100u, v.capacity());
+  ASSERT_EQUAL(0u, v.size());
+}
+
+void demonstrateVecWithSize(){
+  Vec v{Size{100},42};
+  ASSERT_EQUAL(100u, v.size());
+}
+
+void checkOutputIteratorFailsWithVec(){
+  std::ostringstream out;
+  std::ostream_iterator<int> osi{out};
+//  Vec<int> v{osi,osi}; // doesn't compile
+}
+
+void checkInputIteratorSameValueType(){
+  std::istringstream in{"1 2 3"};
+  std::istream_iterator<int> ins{in},eof{};
+  static_assert(std::is_same_v<std::input_iterator_tag,std::iterator_traits<decltype(ins)>::iterator_category>);
+  static_assert(std::is_convertible_v<std::iterator_traits<decltype(ins)>::iterator_category,std::input_iterator_tag>);
+  static_assert(detail__::HasIteratorTrait<decltype(ins)>);
+  static_assert(detail__::IteratorHasValueType<decltype(ins),int>);
+  static_assert(detail__::isInputIterator<std::istream_iterator<int>>);
+  Vec v{ins,eof};
+  static_assert(std::is_same_v<Vec<int>, decltype(v)>);
+  ASSERT_EQUAL(3u,v.size());
+}
+
+
+}
+
 
 namespace test {
 using namespace pssst;
-struct Diff: strong<std::ptrdiff_t,Diff,Linear<std::ptrdiff_t>::apply>{
+struct Diff: Linear<std::ptrdiff_t,Diff>{
+  ~Diff()=default;
 };
 struct Size: create_vector_space<Size,Diff> {
 	constexpr Size()  = default;
@@ -169,5 +276,8 @@ cute::suite make_suite_ArraySizeDiffStrong() {
 	s.push_back(CUTE(TestOOBNegativeAccessThrows));
 	s.push_back(CUTE(TestOOBLargeAccessThrows));
 	s.push_back(CUTE(TestInverseRangeAlgorithmWithArray));
+	s.push_back(CUTE(vec::demonstrateVecWithCapacity));
+	s.push_back(CUTE(vec::demonstrateVecWithSize));
+	s.push_back(CUTE(vec::checkInputIteratorSameValueType));
 	return s;
 }
