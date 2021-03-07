@@ -64,11 +64,11 @@ struct Celsius:create_vector_space<Celsius,degrees,CelsiusZero> {
 static_assert(sizeof(degrees)==sizeof(Celsius));
 
 constexpr Celsius fromKelvin(Kelvin k) noexcept {
-	return convertTo<Celsius>(k);//.value-(value(Celsius::origin()) - value(Kelvin::origin()))};
+	return convertTo<Celsius>(k);
 }
 
 constexpr Kelvin fromCelsius(Celsius c)noexcept{
-	return convertTo<Kelvin>(c);//{c.value-(value(Kelvin::origin())- value(Celsius::origin()))};
+	return convertTo<Kelvin>(c);
 }
 
 struct otherdegrees:ops<otherdegrees,Order,Out>{
@@ -80,8 +80,7 @@ degrees x{5};
 void thisIsADegreesTest() {
 	degrees hotter{20};
 	Celsius spring{15};
-	auto x = spring+hotter;
-	ASSERT_EQUAL(Celsius{35},x);
+	ASSERT_EQUAL(Celsius{35},spring+hotter);
 }
 void thisIsAKelvinDegreesTest() {
 	degrees hotter{20};
@@ -92,7 +91,7 @@ void thisIsAKelvinDegreesTest() {
 void testCelsiusFromKelvin(){
 	Kelvin zero{273.15};
 	zero += degrees{20};
-	ASSERT_EQUAL(Celsius{20},fromKelvin(zero));
+	ASSERT_EQUAL(Celsius{20},convertTo<Celsius>(zero));
 }
 
 void testKelvinFromCelsius(){

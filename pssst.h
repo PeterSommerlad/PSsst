@@ -10,7 +10,7 @@
 #include <stdexcept>
 namespace pssst{
 
-namespace detail__ {
+namespace detail_ {
 constexpr inline void
 throwing_assert(bool cond, char const *msg) {
   if (not cond) throw std::logic_error(msg);
@@ -46,7 +46,7 @@ struct holder {
 }
 
 #ifndef NDEBUG
-#define pssst_assert(cond) detail__::throwing_assert((cond),#cond)
+#define pssst_assert(cond) detail_::throwing_assert((cond),#cond)
 #else
 #define pssst_assert(cond)
 #endif
@@ -59,17 +59,17 @@ struct ops:BS<U>...{
 
 // Either use this as the first base of TAG or nothing
 template <typename V, typename TAG, template<typename...>class ...OPS>
-struct strong:detail__::holder<V,TAG>,ops<TAG,OPS...> {
+struct strong:detail_::holder<V,TAG>,ops<TAG,OPS...> {
 };
 
 
 template <typename T>
-using underlying_value_type = decltype(detail__::membertype(std::declval<T>()));
+using underlying_value_type = decltype(detail_::membertype(std::declval<T>()));
 
 // only supports data member in first or last class in hierarchy, not in-between.
 // the latter is much too tricky to detect.
 // only ever true for aggregates with a single member and empty bases
-namespace detail__{
+namespace detail_{
 template <typename T, typename= void>
 struct needsbaseinit:std::false_type{};
 
@@ -135,7 +135,7 @@ struct default_zero{
   constexpr T operator()() const noexcept(std::is_nothrow_default_constructible_v<T>){
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-    return detail__::retval<T>({});
+    return detail_::retval<T>({});
 #pragma GCC diagnostic pop
   }
 };
@@ -237,7 +237,7 @@ struct UPlus{
   friend constexpr U
   operator+(U const &r) noexcept(noexcept(+std::declval<underlying_value_type<U>>())){
     auto const &[v]=r;
-    return detail__::retval<U>(+v);
+    return detail_::retval<U>(+v);
   }
 };
 template <typename U>
@@ -245,7 +245,7 @@ struct UMinus{
   friend constexpr U
   operator-(U const &r) noexcept(noexcept(-std::declval<underlying_value_type<U>>())){
     auto const &[v]=r;
-    return detail__::retval<U>(-v);
+    return detail_::retval<U>(-v);
   }
 };
 
@@ -287,7 +287,7 @@ struct BitOps {
   friend constexpr R&
   operator|=(R& l, R const &r) noexcept {
     auto &[vl]=l;
-    static_assert(detail__::is_unsigned_like<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_like<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
     auto const &[vr] = r;
     vl = vl | vr;
@@ -300,7 +300,7 @@ struct BitOps {
   friend constexpr R&
   operator&=(R& l, R const &r) noexcept {
     auto &[vl]=l;
-    static_assert(detail__::is_unsigned_like<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_like<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
     auto const &[vr] = r;
     vl = vl & vr;
@@ -313,7 +313,7 @@ struct BitOps {
   friend constexpr R&
   operator^=(R& l, R const &r) noexcept {
     auto &[vl]=l;
-    static_assert(detail__::is_unsigned_like<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_like<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
     auto const &[vr] = r;
     vl = vl ^ vr;
@@ -327,9 +327,9 @@ struct BitOps {
   operator~(R const &r) noexcept {
     auto const &[v]=r;
     using TO = underlying_value_type<R>;
-    static_assert(detail__::is_unsigned_like<TO>,
+    static_assert(detail_::is_unsigned_like<TO>,
         "bitops are only be enabled for unsigned types");
-    return detail__::retval<R>({static_cast<TO>(~v)});
+    return detail_::retval<R>({static_cast<TO>(~v)});
   }
 };
 
@@ -344,14 +344,14 @@ struct ShiftOps{
   operator<<=(R& l, B r)  {
     auto &[vl]=l;
     using TO = underlying_value_type<R>;
-    static_assert(detail__::is_unsigned_like<TO>,
+    static_assert(detail_::is_unsigned_like<TO>,
         "bitops are only be enabled for unsigned types");
-    if constexpr (detail__::is_unsigned_like<B>){
+    if constexpr (detail_::is_unsigned_like<B>){
       pssst_assert(r <= std::numeric_limits<TO>::digits);
       vl = static_cast<TO>(vl << r);
     } else {
       auto const &[vr] = r;
-      static_assert(detail__::is_unsigned_like<TO>,"shift by unsigned values only");
+      static_assert(detail_::is_unsigned_like<TO>,"shift by unsigned values only");
       pssst_assert(vr <= std::numeric_limits<TO>::digits);
       vl = static_cast<TO>(vl << vr);
     }
@@ -365,14 +365,14 @@ struct ShiftOps{
   operator>>=(R& l, B r)  {
     auto &[vl]=l;
     using TO = std::remove_reference_t<decltype(vl)>;
-    static_assert(detail__::is_unsigned_like<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_like<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
-    if constexpr (detail__::is_unsigned_like<B>){
+    if constexpr (detail_::is_unsigned_like<B>){
       pssst_assert(r <= std::numeric_limits<underlying_value_type<R>>::digits);
       vl = static_cast<TO>(vl >> r);
     } else {
       auto const &[vr] = r;
-      static_assert(detail__::is_unsigned_like<underlying_value_type<R>>,"shift by unsigned values only");
+      static_assert(detail_::is_unsigned_like<underlying_value_type<R>>,"shift by unsigned values only");
       pssst_assert(vr <= std::numeric_limits<std::remove_reference_t<decltype(vl)>>::digits);
       vl = static_cast<TO>(vl >> vr);
     }
@@ -430,7 +430,7 @@ struct Sub {
     fun(U const &r) {\
   auto const &[v]=r;\
   using std::fun;\
-  return detail__::retval<U>(fun(v)); \
+  return detail_::retval<U>(fun(v)); \
 }
 
 
@@ -448,6 +448,30 @@ struct Rounding {
   MakeUnaryMathFunc(nearbyint)
   MakeUnaryMathFunc(rint)
 };
+template <typename U>
+struct ExpLog{
+  MakeUnaryMathFunc(exp)
+  MakeUnaryMathFunc(exp2)
+  MakeUnaryMathFunc(expm1)
+  MakeUnaryMathFunc(log)
+  MakeUnaryMathFunc(log2)
+  MakeUnaryMathFunc(log1p)
+};
+template <typename U>
+struct Root{
+  MakeUnaryMathFunc(sqrt)
+  MakeUnaryMathFunc(cbrt)
+};
+
+template <typename U>
+struct Trigonometric{
+  MakeUnaryMathFunc(sin)
+  MakeUnaryMathFunc(cos)
+  MakeUnaryMathFunc(tan)
+  MakeUnaryMathFunc(asin)
+  MakeUnaryMathFunc(acos)
+  MakeUnaryMathFunc(atan)
+};
 
 // the following should return the underlying type or double, because they are not linear
 // and thus the result should not be of the strong type applied to
@@ -461,7 +485,7 @@ struct Rounding {
 
 // demo/convenience, not used yet
 template <typename U>
-struct ExpLog{
+struct ExpLogPlain{
   MakeUnaryMathFuncPlain(exp)
   MakeUnaryMathFuncPlain(exp2)
   MakeUnaryMathFuncPlain(expm1)
@@ -470,13 +494,13 @@ struct ExpLog{
   MakeUnaryMathFuncPlain(log1p)
 };
 template <typename U>
-struct Root{
+struct RootPlain{
   MakeUnaryMathFuncPlain(sqrt)
   MakeUnaryMathFuncPlain(cbrt)
 };
 
 template <typename U>
-struct Trigonometric{
+struct TrigonometricPlain{
   MakeUnaryMathFuncPlain(sin)
   MakeUnaryMathFuncPlain(cos)
   MakeUnaryMathFuncPlain(tan)
@@ -496,7 +520,7 @@ using Additive=ops<V,UMinus,Abs,Add,Sub>;
 // the static constexpr members prefix and/or suffix in the strong type
 // for more complicated things, provide your own << overload
 
-namespace detail__{
+namespace detail_{
 // detect prefix and suffix static members for output
 template <typename U, typename = std::void_t<>>
     struct has_prefix : std::false_type{};
@@ -511,12 +535,12 @@ template <typename U>
 struct Out{
   friend std::ostream&
   operator<<(std::ostream &out, U const &r) {
-    if constexpr (detail__::has_prefix<U>{}){
+    if constexpr (detail_::has_prefix<U>{}){
       out << U::prefix;
     }
     auto const &[v]=r;
     out << v;
-    if constexpr (detail__::has_suffix<U>{}){
+    if constexpr (detail_::has_suffix<U>{}){
       out << U::suffix;
     }
     return out;
@@ -524,7 +548,7 @@ struct Out{
 };
 
 // Arithmetic multiplicative operations (not always useful, see below for Linear)
-namespace detail__{
+namespace detail_{
 template <typename R, typename BASE> // need to pass base to know if modulo makes sense
 struct check_base_impl {
   friend constexpr bool
@@ -563,7 +587,7 @@ struct ModuloImpl<R,true>{
   friend constexpr
   R&
   operator%=(R& l, R const &r) {
-    if constexpr (detail__::has_check_base_v<R>) {
+    if constexpr (detail_::has_check_base_v<R>) {
        constexpr  auto checked [[maybe_unused]] = check_base(R{});
     }
     auto &[vl]=l;
@@ -586,7 +610,7 @@ template <typename R>
 struct Mul {
   friend constexpr R&
   operator*=(R& l, R const &r) noexcept {
-    if constexpr (detail__::has_check_base_v<R>) {
+    if constexpr (detail_::has_check_base_v<R>) {
        constexpr auto checked [[maybe_unused]] = check_base(R{});
     }
     auto &[vl]=l;
@@ -603,7 +627,7 @@ template <typename R>
 struct Div {
   friend constexpr R&
   operator/=(R& l, R const &r) {
-    if constexpr (detail__::has_check_base_v<R>) {
+    if constexpr (detail_::has_check_base_v<R>) {
        constexpr  auto  checked[[maybe_unused]] = check_base(R{});
     }
     auto &[vl]=l;
@@ -622,11 +646,11 @@ struct Div {
 // multiplicative operations with scalar, provide commutativity of *
 template <typename R, typename BASE> // need to pass base to know if modulo makes sense
 struct ArithMultImpl
-  : detail__::check_base_impl<R,BASE>
+  : detail_::check_base_impl<R,BASE>
   , Mul<R>
   , Div<R>
   , ModuloImpl<R,(std::is_integral_v<BASE> && not std::is_same_v<std::decay_t<BASE>,bool>) ||
-                 (std::is_class_v<R> && detail__::supports_modulo_v<BASE>) ||
+                 (std::is_class_v<R> && detail_::supports_modulo_v<BASE>) ||
                  (std::is_enum_v<BASE> )>
   {
   };
@@ -634,13 +658,13 @@ struct ArithMultImpl
 
 
 template <typename V, typename BASE, template<typename...>class ...OPS> // can not use underlying_value_type, because V is still incomplete
-using MultOps = ops<V, detail__::bind2<BASE,ArithMultImpl>::template apply, OPS... >;
+using MultOps = ops<V, detail_::bind2<BASE,ArithMultImpl>::template apply, OPS... >;
 
 
 
 // A base for multiplicative types, need to add other ops at discretion
 template <typename V, typename TAG, template<typename...>class ...OPS>
-using Multiplicative=strong<V,TAG,detail__::bind2<V,ArithMultImpl>::template apply, OPS... >;
+using Multiplicative=strong<V,TAG,detail_::bind2<V,ArithMultImpl>::template apply, OPS... >;
 
 // for arithmetic types
 template <typename V, typename TAG, template<typename...>class ...OPS>
@@ -724,7 +748,7 @@ struct ScalarMultImpl : ScalarModulo<R,BASE,std::is_integral_v<BASE> && not std:
 
 // scalar multiplication must know the scalar type
 template<typename BASE>
-using ScalarMult=detail__::bind2<BASE,ScalarMultImpl>;
+using ScalarMult=detail_::bind2<BASE,ScalarMultImpl>;
 // usage: strong<unsigned,TAG,ScalarMult<unsigned>::apply,Add>
 // or for typical value types one below
 
@@ -745,10 +769,10 @@ using ScalarMult_ll= ScalarMultImpl<TAG,long long>;
 // a 1-d linear space without origin (or implicit zero)
 
 // LinearImpl needs to be a class to be able to pass it as template template argument to bind2
-template <typename TAG, typename BASE,  template<typename...>class ...OPS> // can not use underlying_value_type, because V is still incomplete
-using LinearOps = ops<TAG,     detail__::bind2<BASE,ScalarMultImpl>::template apply, Additive, Order, Value, OPS... >;
+template <typename TAG, typename BASE,  template<typename...>class ...OPS>
+using LinearOps = ops<TAG,     ScalarMult<BASE>::template apply, Additive, Order, Value, OPS... >;
 template <typename BASE, typename TAG, template<typename...>class ...OPS>
-using Linear=strong<BASE, TAG, detail__::bind2<BASE,ScalarMultImpl>::template apply, Additive, Order, Value, OPS... >;
+using Linear=strong<BASE, TAG, ScalarMult<BASE>::template apply, Additive, Order, Value, OPS... >;
 
 
 // 1 dimensional vector space = Linear + origin(= ZEROFUNC{}())
@@ -760,10 +784,10 @@ struct create_vector_space : ops<ME,Order, Value, Out>{
   static_assert(std::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
   // make origin a function to prevent discrepancies in template instantiations of static inline variables across compilers
   static inline constexpr auto
-  origin() noexcept{ return vector_space{detail__::retval<affine_space>(ZEROFUNC{}())};}
+  origin() noexcept{ return vector_space{detail_::retval<affine_space>(ZEROFUNC{}())};}
   // the following two constructors are deliberately implicit:
   constexpr create_vector_space(affine_space v=origin()) noexcept:value{v}{}
-  constexpr create_vector_space(underlying_value_type<affine_space> v) noexcept:value{detail__::retval<affine_space>(v)}{}
+  constexpr create_vector_space(underlying_value_type<affine_space> v) noexcept:value{detail_::retval<affine_space>(v)}{}
 
   affine_space value;
 
@@ -843,7 +867,7 @@ constexpr TO convertTo(FROM from) noexcept{
   static_assert(std::is_same_v<
       typename FROM::affine_space
       ,typename TO::affine_space>);
-  return detail__::retval<TO>((from.value-(value(TO::origin())-value(FROM::origin()))));
+  return detail_::retval<TO>((from.value-(value(TO::origin())-value(FROM::origin()))));
 }
 
 } // pssst

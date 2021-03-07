@@ -9,11 +9,11 @@ static_assert(std::is_trivially_destructible_v<Bool>);
 
 
 using ::pssst::underlying_value_type;
-static_assert(!detail__::needsbaseinit<int>{},"needsbasinit for built-in");
+static_assert(!detail_::needsbaseinit<int>{},"needsbasinit for built-in");
 
 struct Y {};
 struct X:Y{int v;};
-static_assert(detail__::needsbaseinit<X>{},"needsbasinit with empty class false");
+static_assert(detail_::needsbaseinit<X>{},"needsbasinit with empty class false");
 
 template <typename U, typename = void>
 struct is_vector_space : std::false_type{};
@@ -104,9 +104,9 @@ static_assert(is_ebo_v<UMinus<dummy>>,"UMinus should be EBO enabled");
 static_assert(is_ebo_v<Value<dummy>>,"Value should be EBO enabled");
 static_assert(is_ebo_v<Rounding<dummy>>,"Rounding should be EBO enabled");
 static_assert(is_ebo_v<Abs<dummy>>,"Abs should be EBO enabled");
-static_assert(is_ebo_v<ExpLog<dummy>>,"ExpLog should be EBO enabled");
-static_assert(is_ebo_v<Root<dummy>>,"Root should be EBO enabled");
-static_assert(is_ebo_v<Trigonometric<dummy>>,"Trigonometric should be EBO enabled");
+static_assert(is_ebo_v<ExpLogPlain<dummy>>,"ExpLog should be EBO enabled");
+static_assert(is_ebo_v<RootPlain<dummy>>,"Root should be EBO enabled");
+static_assert(is_ebo_v<TrigonometricPlain<dummy>>,"Trigonometric should be EBO enabled");
 static_assert(is_ebo_v<ScalarModulo<dummy,unsigned>>,"ScalarModulo should be EBO enabled");
 static_assert(is_ebo_v<ScalarMult<double>::apply<dummy>>,"ScalarModulo should be EBO enabled");
 
@@ -118,14 +118,14 @@ static_assert(sizeof(double)==sizeof(dummy_d),"dummy_d should be same size as do
 namespace test_ArithModulo{
 
 struct wrong:strong<double,wrong>,ArithMultImpl<wrong,int>, Eq<wrong>{};
-static_assert(detail__::has_check_base_v<wrong>);
+static_assert(detail_::has_check_base_v<wrong>);
 // fails to compile due to check that multiplication base is same as value type
 // static_assert(wrong{1} == wrong{1}/wrong{1});
 // static_assert(wrong{1} == wrong{1}*wrong{1});
 // static_assert(wrong{1} == wrong{1}%wrong{1});
 enum bla:int{};
-constexpr bla operator%(bla lhs,bla rhs){ return bla{};}
-static_assert(detail__::supports_modulo_v<bla>);
+constexpr bla operator%(bla ,bla ){ return bla{};}
+static_assert(detail_::supports_modulo_v<bla>);
 
 }
 
@@ -136,7 +136,7 @@ struct liter : ops<liter,Additive,Order,Out>{
 };
 static_assert(sizeof(liter)==sizeof(double)); // ensure empty bases are squashed
 static_assert(std::is_trivially_copyable_v<liter>); // ensure efficient argument passing
-static_assert(not detail__::needsbaseinit<liter>{},"does liter need base init?");
+static_assert(not detail_::needsbaseinit<liter>{},"does liter need base init?");
 
 
 

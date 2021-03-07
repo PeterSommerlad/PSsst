@@ -8,7 +8,7 @@ namespace pssst {
 
 // duplication of macro to avoid leaking it from header
 #ifndef NDEBUG
-#define pssst_assert(cond) detail__::throwing_assert((cond),#cond)
+#define pssst_assert(cond) detail_::throwing_assert((cond),#cond)
 #else
 #define pssst_assert(cond)
 #endif
@@ -20,7 +20,7 @@ namespace pssst {
 // define enumerator limit__ equal to the last value, if you want wrapping
 // define enumerator start__ to be the same value as the first element if its value is not 0
 // increment and decrement only make sense, when the enumeration range is contiguous
-namespace detail__ {
+namespace detail_ {
 template <typename E, typename =std::void_t<> >
 struct enum_has_limit:std::false_type{};
 template <typename E>
@@ -40,7 +40,7 @@ using ule = std::underlying_type_t<E>;
 namespace enum_iteration {
 template < typename E , typename = std::enable_if_t<std::is_enum_v<E> >>
 constexpr E operator++(E &e) noexcept {
-	using namespace detail__;
+	using namespace detail_;
 	auto val=static_cast<ule<E>>(e);
 	pssst_assert(val < std::numeric_limits<decltype(val)>::max());
 	++val;
@@ -64,7 +64,7 @@ constexpr E operator++(E & e, int) noexcept {
 }
 template < typename E , typename = std::enable_if_t<std::is_enum_v<E> >>
 constexpr E operator--(E &e) noexcept {
-	using namespace detail__;
+	using namespace detail_;
 	auto val=static_cast<ule<E>>(e);
 	constexpr E begin = []{
 			if constexpr (enum_has_start<E>{})
@@ -91,10 +91,10 @@ constexpr E operator--(E & e, int) noexcept {
 	--e;
 	return res;
 }
-namespace inner_detail__{
+namespace inner_detail_{
 using ::pssst::enum_iteration::operator++;
 // not that easy, needs scaffolding to make it an iterator....
-template<typename E, typename = std::enable_if_t<detail__::enum_has_limit<E>{}>>
+template<typename E, typename = std::enable_if_t<detail_::enum_has_limit<E>{}>>
 struct enum_iterator
 		:ops<enum_iterator<E>,Value,Inc,Dec,Eq>{
 			E val;
@@ -103,13 +103,13 @@ constexpr E operator*()noexcept {
 }
 };
 }
-template<typename E, typename = std::enable_if_t<detail__::enum_has_limit<E>{}>>
-constexpr inner_detail__::enum_iterator<E> begin(E e) noexcept {
-	return detail__::retval<inner_detail__::enum_iterator<E>>(e);
+template<typename E, typename = std::enable_if_t<detail_::enum_has_limit<E>{}>>
+constexpr inner_detail_::enum_iterator<E> begin(E e) noexcept {
+	return detail_::retval<inner_detail_::enum_iterator<E>>(e);
 }
-template<typename E, typename = std::enable_if_t<detail__::enum_has_limit<E>{}>>
-constexpr inner_detail__::enum_iterator<E> end(E ) noexcept {
-	return detail__::retval<inner_detail__::enum_iterator<E>>(E::limit__);
+template<typename E, typename = std::enable_if_t<detail_::enum_has_limit<E>{}>>
+constexpr inner_detail_::enum_iterator<E> end(E ) noexcept {
+	return detail_::retval<inner_detail_::enum_iterator<E>>(E::limit__);
 }
 } // enum_iteration
 #undef pssst_assert

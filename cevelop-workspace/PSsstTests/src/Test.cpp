@@ -17,6 +17,7 @@
 #include <string>
 #include "EnumOperators.h"
 #include "ArithmeticOperationsTest.h"
+#include "DoubleErsatz.h"
 
 
 using namespace pssst;
@@ -120,6 +121,8 @@ bool runAllTests(int argc, char const *argv[]) {
 	cute::xml_listener<cute::ide_listener<>> lis(xmlfile.out);
 	auto const runner = cute::makeRunner(lis, argc, argv);
 	bool success = runner(s, "AllTests");
+  cute::suite DoubleErsatz = make_suite_DoubleErsatz();
+  success &= runner(DoubleErsatz, "DoubleErsatz");
 	cute::suite BitOperationsTest = make_suite_BitOperationsTest();
 	success &= runner(BitOperationsTest, "BitOperationsTest");
 	cute::suite ArraySizeDiffStrong = make_suite_ArraySizeDiffStrong();

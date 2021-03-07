@@ -78,7 +78,7 @@ void testDecrementWrapSimple(){
 }
 
 void testRangeFor(){
-	using pssst::detail__::ule;
+	using pssst::detail_::ule;
 
 	int counter=0;
 
