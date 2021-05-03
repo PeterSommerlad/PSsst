@@ -120,12 +120,12 @@ using namespace pssst;
 struct Diff: Linear<std::ptrdiff_t,Diff>{
   ~Diff()=default;
 };
-struct Size: create_vector_space<Size,Diff> {
+struct Size: affine_space_for<Size,Diff> {
 	constexpr Size()  = default;
 	constexpr Size(size_t val)
 	:Size{Diff{static_cast<std::ptrdiff_t>(val)}}{}
 	constexpr Size(Diff val)
-	:create_vector_space<Size,Diff>{val}{
+	:affine_space_for<Size,Diff>{val}{
 		if (val < Diff{0})
 			throw std::logic_error{"size is too large"};
 	}

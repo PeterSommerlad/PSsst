@@ -147,18 +147,18 @@ struct Bool {
     constexpr Bool(bool const b) noexcept :
         val { b } {
     }
-        friend constexpr Bool
-        operator==(Bool const &l, Bool const& r) noexcept {
-            return Bool{l.val == r.val};
-        }
-        friend constexpr Bool
-        operator!=(Bool const &l, Bool const& r) noexcept {
-            return !(l==r);
-        }
-        friend constexpr Bool
-        operator !(Bool const &l){
-            return Bool{! l.val};
-        }
+    friend constexpr Bool
+    operator==(Bool const &l, Bool const& r) noexcept {
+        return Bool{l.val == r.val};
+    }
+    friend constexpr Bool
+    operator!=(Bool const &l, Bool const& r) noexcept {
+        return !(l==r);
+    }
+    friend constexpr Bool
+    operator !(Bool const &l){
+        return Bool{! l.val};
+    }
     // convert from pointers
     template <typename T>
     constexpr Bool(T * const x) noexcept :
@@ -188,46 +188,46 @@ struct Bool {
 // assumes comparisons won't throw as well as constructing Bool
 
 // the following would change with operator<=>, but we target C++17 for now
-template <typename U, typename Bool=::pssst::Bool>
+template <typename U, typename BOOL= bool>
 struct Eq{
-  friend constexpr Bool
+  friend constexpr BOOL
   operator==(U const &l, U const& r) noexcept {
     auto const &[vl]=l;
     auto const &[vr]=r;
-    return Bool(vl == vr);
+    return BOOL(vl == vr);
   }
-  friend constexpr Bool
+  friend constexpr BOOL
   operator!=(U const &l, U const& r) noexcept {
     return !(l==r);
   }
 };
 
-template <typename U, typename Bool=bool>
-struct Order: Eq<U,Bool> {
-  friend constexpr Bool
+template <typename U, typename BOOL= bool>
+struct Order: Eq<U,BOOL> {
+  friend constexpr BOOL
   operator<(U const &l, U const& r) noexcept {
     auto const &[vl]=l;
     auto const &[vr]=r;
-    return Bool(vl < vr);
+    return BOOL(vl < vr);
   }
-  friend constexpr Bool
+  friend constexpr BOOL
   operator>(U const &l, U const& r) noexcept {
     return r < l;
   }
-  friend constexpr Bool
+  friend constexpr BOOL
   operator<=(U const &l, U const& r) noexcept {
     return !(r < l);
   }
-  friend constexpr Bool
+  friend constexpr BOOL
   operator>=(U const &l, U const& r) noexcept {
     return !(l < r);
   }
 };
-// comparisons with regular bool as result
+// comparisons with irregular Bool as result
 template <typename U>
-using OrderB = Order<U,bool>;
+using OrderB = Order<U,pssst::Bool>;
 template <typename U>
-using EqB = Eq<U,bool>;
+using EqB = Eq<U,pssst::Bool>;
 
 
 // unary plus and minus
@@ -775,98 +775,65 @@ template <typename BASE, typename TAG, template<typename...>class ...OPS>
 using Linear=strong<BASE, TAG, ScalarMult<BASE>::template apply, Additive, Order, Value, OPS... >;
 
 
-// 1 dimensional vector space = Linear + origin(= ZEROFUNC{}())
-template <typename ME, typename AFFINE, typename ZEROFUNC=default_zero<AFFINE>>
-struct create_vector_space : ops<ME,Order, Value, Out>{
-  using affine_space=AFFINE;
-  using vector_space=ME;
-  using value_type=underlying_value_type<affine_space>;
-  static_assert(std::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
+// 1 dimensional affine space (Points) = Linear + origin(= ZEROFUNC{}())
+template <typename POINT, typename VECTOR_SPACE, typename ZEROFUNC=default_zero<VECTOR_SPACE>>
+struct affine_space_for : ops<POINT,Order, Value, Out>{
+  using vector_space=VECTOR_SPACE;
+  using point=POINT;
+  using value_type=underlying_value_type<vector_space>;
+  static_assert(std::is_same_v<vector_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
   // make origin a function to prevent discrepancies in template instantiations of static inline variables across compilers
   static inline constexpr auto
-  origin() noexcept{ return vector_space{detail_::retval<affine_space>(ZEROFUNC{}())};}
+  origin() noexcept{ return point{detail_::retval<vector_space>(ZEROFUNC{}())};}
   // the following two constructors are deliberately implicit:
-  constexpr create_vector_space(affine_space v=origin()) noexcept:value{v}{}
-  constexpr create_vector_space(underlying_value_type<affine_space> v) noexcept:value{detail_::retval<affine_space>(v)}{}
+  constexpr affine_space_for(vector_space v=origin()) noexcept:value{v}{}
+  constexpr affine_space_for(value_type v) noexcept:value{detail_::retval<vector_space>(v)}{}
 
-  affine_space value;
+  vector_space value;
 
   // need to redefine linear operations to take origin into account.
   // linear
-  // vs + as
-  friend constexpr vector_space&
-  operator+=(vector_space& l, affine_space const &r) noexcept(noexcept(l = vector_space{l.value + r})) {
-    l = vector_space{l.value + r};
+  // point + vector
+  friend constexpr point&
+  operator+=(point& l, vector_space const &r) noexcept(noexcept(l = point{l.value + r})) {
+    l = point{l.value + r};
     return l;
   }
-  friend constexpr vector_space
-  operator+(vector_space l, affine_space const &r) noexcept(noexcept(l += r)) {
+  friend constexpr point
+  operator+(point l, vector_space const &r) noexcept(noexcept(l += r)) {
     return l += r;
   }
-  friend constexpr vector_space
-  operator+(affine_space const & l, vector_space r) noexcept(noexcept(r += l)) {
+  friend constexpr point
+  operator+(vector_space const & l, point r) noexcept(noexcept(r += l)) {
     return r += l;
   }
-  // vs - as // caution check if before origin is allowed overflow check
-  friend constexpr vector_space&
-  operator-=(vector_space& l, affine_space const &r) noexcept(noexcept(l = vector_space{l.value - r})) {
-    l = vector_space{l.value - r};
+  // point - vector // caution check if before origin is allowed overflow check
+  friend constexpr point&
+  operator-=(point& l, vector_space const &r) noexcept(noexcept(l = point{l.value - r})) {
+    l = point{l.value - r};
     return l;
   }
-  friend constexpr vector_space
-  operator-(vector_space l, affine_space const &r) noexcept(noexcept(l -= r)) {
+  friend constexpr point
+  operator-(point l, vector_space const &r) noexcept(noexcept(l -= r)) {
     return l -= r;
   }
-  // vs - vs = as
-  friend constexpr affine_space
-  operator-(vector_space const &l,vector_space const &r) noexcept(noexcept(l.value - r.value)) {
+  // point - point = vector
+  friend constexpr vector_space
+  operator-(point const &l,point const &r) noexcept(noexcept(l.value - r.value)) {
     return l.value - r.value;
   }
-  // vs + vs, vs * scalar
-  friend constexpr vector_space&
-  operator+=(vector_space &l, vector_space const &r) noexcept(noexcept(l = origin() + ((l - origin()) + (r - origin())))) {
-    l = origin() + ((l - origin()) + (r - origin()));
-    return l;
-  }
-  friend constexpr vector_space
-  operator+(vector_space l, vector_space const &r) noexcept(noexcept(l+=r)) {
-    l += r;
-    return l;
-  }
-  friend constexpr vector_space&
-  operator *=(vector_space &l, value_type r) noexcept(noexcept(l = origin() + (l - origin()) * r)) {
-    l = origin() + (l - origin()) * r ;
-    return l;
-  }
-  friend constexpr vector_space
-  operator*(vector_space l, value_type const &r) noexcept(noexcept(l *= r)) {
-    return l *= r;
-  }
-  friend constexpr vector_space
-  operator*(value_type const & l, vector_space r) noexcept(noexcept(r *= l)) {
-    return r *= l;
-  }
-  friend constexpr vector_space&
-  operator/=(vector_space& l, value_type const &r) {
-    // need to check if r is 0 and handle error
-    pssst_assert(r != decltype(r){});
-    l = vector_space{ l.value / r };
-    return l;
-  }
-  friend constexpr vector_space
-  operator/(vector_space l, value_type const &r)  {
-    return l /= r;
-  }
+
+
 };
 
 
-// must be vector spaces from same affine space, e.g. celsius to kelvin
-// TODO: conversion with scaling factor, e.g. fahrenheit to celsius
+// must be affine spaces from same vector space, e.g. celsius to kelvin
+// NOTODO: conversion with scaling factor, e.g. fahrenheit to celsius -> NO, that is Units!
 template<typename TO, typename FROM>
 constexpr TO convertTo(FROM from) noexcept{
   static_assert(std::is_same_v<
-      typename FROM::affine_space
-      ,typename TO::affine_space>);
+      typename FROM::vector_space
+      ,typename TO::vector_space>);
   return detail_::retval<TO>((from.value-(value(TO::origin())-value(FROM::origin()))));
 }
 

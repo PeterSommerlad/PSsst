@@ -133,6 +133,86 @@ void testLiterWithoutStrong(){
 }
 
 
+namespace withoutpssst {
+struct literGas{
+    double value;
+};
+struct kmDriven{
+    double value;
+};
+struct literper100km{
+    double value;
+    constexpr
+    bool operator==(literper100km const & r)
+    const & noexcept { // make it symmetric
+      return value == r.value; // shady bc double
+    }
+    constexpr
+    bool operator!=(literper100km const & r)
+    const & noexcept {
+      return ! (*this == r);
+    }
+};
+
+literper100km consumption(literGas liter, kmDriven km){
+  return {liter.value/(km.value/100)};
+  // braces needed (aggregate initialization)
+}
+void demonstrateStrongTypeProblem() {
+  literGas consumed{40};
+  kmDriven distance{500};
+  ASSERT_EQUAL(literper100km{8}, consumption(consumed,distance));
+  // error: no match for 'operator=='
+}
+
+
+}
+
+namespace withsimplebool {
+
+template <typename U>
+struct Eq{
+  friend constexpr
+  bool
+  operator==(U const &l, U const& r) noexcept {
+    auto const &[vl]=l;
+    auto const &[vr]=r;
+    return vl == vr;
+  }
+  friend constexpr
+  bool
+  operator!=(U const &l, U const& r) noexcept {
+    return !(l==r);
+  }
+};
+
+
+struct literGas{
+    double value;
+};
+struct kmDriven{
+    double value;
+};
+struct literper100km : Eq<literper100km> {
+    double value;
+};
+
+literper100km consumption(literGas liter, kmDriven km){
+  return {{},liter.value/(km.value/100)};
+  // braces needed (aggregate initialization)
+}
+void demonstrateStrongTypeProblem() {
+  literGas consumed{40};
+  kmDriven distance{500};
+  ASSERT_EQUAL((literper100km{{},8}), consumption(consumed,distance));
+  // error: no match for 'operator=='
+}
+static_assert(std::is_arithmetic_v<bool>);
+
+constexpr literper100km l12{{},12}, l24{{},24};
+
+static_assert(2 * (l12 != l24));
+}
 
 cute::suite make_suite_Consumption() {
 	cute::suite s { };
@@ -145,5 +225,7 @@ cute::suite make_suite_Consumption() {
 	s.push_back(CUTE(testConsumtionWithOutput));
 	s.push_back(CUTE(testEfficiency1over1));
 	s.push_back(CUTE(testConsumptionVSEfficiency));
+	s.push_back(CUTE(withoutpssst::demonstrateStrongTypeProblem));
+	s.push_back(CUTE(withsimplebool::demonstrateStrongTypeProblem));
 	return s;
 }

@@ -133,6 +133,7 @@ struct BoolTest {
     template<typename FROM>
     static constexpr bool BoolDoesConvertFrom_v = BoolDoesConvertFrom<FROM>::value;
 
+    static_assert(not BoolDoesConvertFrom_v<char>);
     static_assert(not BoolDoesConvertFrom_v<int>);
     static_assert(not BoolDoesConvertFrom_v<double>);
     static_assert(BoolDoesConvertFrom_v<bool>);

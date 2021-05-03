@@ -22,9 +22,9 @@ struct degrees:
 static_assert(sizeof(double)==sizeof(degrees));
 
 
-struct Kelvin:create_vector_space<Kelvin,degrees>{
+struct Kelvin:affine_space_for<Kelvin,degrees>{
 #ifndef USE_STRONG
-	using base = create_vector_space<Kelvin,degrees>;
+	using base = affine_space_for<Kelvin,degrees>;
 	explicit constexpr
 				Kelvin(degrees val) noexcept
 				:base{val}{}
@@ -45,9 +45,9 @@ struct CelsiusZero{
 	}
 };
 
-struct Celsius:create_vector_space<Celsius,degrees,CelsiusZero> {
+struct Celsius:affine_space_for<Celsius,degrees,CelsiusZero> {
 	#ifndef USE_STRONG
-	using base=create_vector_space<Celsius,degrees,CelsiusZero>;
+	using base=affine_space_for<Celsius,degrees,CelsiusZero>;
 
 	explicit constexpr
 				Celsius(degrees val) noexcept

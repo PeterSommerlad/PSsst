@@ -49,7 +49,7 @@ struct bla:Linear<int,bla>{};
 static_assert(sizeof(bla)==sizeof(int));
 static_assert(!is_vector_space_v<bla>,"bla is absolute?");
 static_assert(0 == bla{0}.value, "check for subobject warning");
-struct blu:create_vector_space<blu,bla>{};
+struct blu:affine_space_for<blu,bla>{};
 static_assert(sizeof(blu)==sizeof(int));
 static_assert(is_vector_space_v<blu>,"blu should be vector space");
 //static_assert(bool(blu::origin==blu{0}),"blu origin is zero");
