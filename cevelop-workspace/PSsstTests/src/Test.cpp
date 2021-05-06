@@ -104,6 +104,55 @@ void testWaitCounter(){
 	ASSERT_EQUAL(2,c.value);
 }
 
+namespace p0109{
+// model p0109 energy example
+
+struct energy: Linear<double,energy>{};
+
+struct thermal : energy,  LinearOps<thermal, double>{};
+
+struct kinetic: energy,  LinearOps<kinetic, double>{};
+
+void test_energy_expressions(){
+  energy e{1.23}; // okay; explicit
+  //double d{e};    // error P0109 explicit
+  double d{value(e)}; // pssst version of explicit
+  // d = e; //  error: cannot convert 'p0109::energy' to 'double' in assignment
+  e = e + e; // okay
+  //e = e * e; // error; call to deleted function
+  // error: no match for 'operator*' (operand types are 'p0109::energy' and 'p0109::energy')
+  e *= 2.71828; // okay
+
+  thermal t{4.56};
+  kinetic k{7.89};
+  e = t; e = k; // both okay; public allows type adjustment
+  //t = e; t = k; // both in error; the adjustment is only unidirectional
+  // error: no match for 'operator=' (operand types are 'p0109::thermal' and 'p0109::energy')
+  t=t+t; k=k+k; //okay; public implies default trampolines
+  e = t + k; // okay; calls the underlying trampoline
+  ASSERT_EQUAL(1.23,d); // dummy
+}
+
+}
+
+namespace demo_output_crtp {
+
+struct literper100km : Out<literper100km> {
+  double value;
+  constexpr static inline auto  prefix="consumption ";
+  constexpr static inline auto  suffix=" l/100km";
+};
+
+void demo_output_crtp(){
+  literper100km consumed{{},9.5};
+  std::ostringstream out{};
+  out << consumed;
+  ASSERT_EQUAL("consumption 9.5 l/100km", out.str());
+}
+
+
+}
+
 
 
 bool runAllTests(int argc, char const *argv[]) {
@@ -146,6 +195,8 @@ bool runAllTests(int argc, char const *argv[]) {
 	cute::suite EnumOperators = make_suite_EnumOperators();
 	success &= runner(EnumOperators, "EnumOperators");
   cute::suite ArithmeticOperationsTest = make_suite_ArithmeticOperationsTest();
+	ArithmeticOperationsTest.push_back(CUTE(p0109::test_energy_expressions));
+	ArithmeticOperationsTest.push_back(CUTE(demo_output_crtp::demo_output_crtp));
   success &= runner(ArithmeticOperationsTest, "ArithmeticOperationsTest");
 	return success;
 }

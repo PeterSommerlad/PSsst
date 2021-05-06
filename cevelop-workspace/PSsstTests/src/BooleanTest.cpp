@@ -4,8 +4,53 @@
 #include <utility>
 #include "pssst.h"
 
+// a better Bool than bool, used for comparisons
+struct Bool {
+    constexpr Bool() noexcept=default;
+    constexpr Bool(bool const b) noexcept :
+        val { b } {
+    }
+    friend constexpr Bool
+    operator==(Bool const &l, Bool const& r) noexcept {
+        return Bool{l.val == r.val};
+    }
+    friend constexpr Bool
+    operator!=(Bool const &l, Bool const& r) noexcept {
+        return !(l==r);
+    }
+    friend constexpr Bool
+    operator !(Bool const &l){
+        return Bool{! l.val};
+    }
+    // convert from pointers
+    template <typename T>
+    constexpr Bool(T * const x) noexcept :
+        val { x!= nullptr }{
+        }
+    constexpr Bool(std::nullptr_t) noexcept {}
+    // other conversion attempts are not allowed
+    template <typename T, typename = std::enable_if_t<
+                        std::is_constructible<bool,T>::value
+                        && std::is_class_v<
+                             std::remove_cv_t<std::remove_reference_t<T>>
+                             >> >
+    constexpr Bool(T const &x) noexcept
+    :Bool(static_cast<bool>(x)){}
+    constexpr explicit operator bool() const noexcept {
+        return val;
+    }
+    bool val{};
+};
+
+
 using namespace pssst;
 struct BoolTest {
+  // test Bool properties
+  static_assert(sizeof(Bool)==sizeof(bool));
+  static_assert(std::is_trivially_copyable_v<Bool>);
+  static_assert(std::is_trivially_destructible_v<Bool>);
+
+
 	constexpr static Bool const t { true };
 	constexpr static Bool const f { false };
 	void ConvertsTobool() const {

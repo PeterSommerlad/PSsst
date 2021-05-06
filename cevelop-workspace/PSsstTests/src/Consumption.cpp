@@ -2,6 +2,8 @@
 #include "pssst.h"
 #include "cute.h"
 
+#include <iostream>
+
 #include <sstream>
 
 using namespace pssst;
@@ -211,7 +213,8 @@ static_assert(std::is_arithmetic_v<bool>);
 
 constexpr literper100km l12{{},12}, l24{{},24};
 
-static_assert(2 * (l12 != l24));
+// for c++now talk. gives warning.
+// static_assert(2 * (l12 != l24));
 }
 
 cute::suite make_suite_Consumption() {
