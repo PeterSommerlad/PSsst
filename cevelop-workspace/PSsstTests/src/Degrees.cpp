@@ -105,7 +105,7 @@ void testConversion(){
 	ASSERT_EQUAL(Kelvin{293.15},k);
 	ASSERT_EQUAL(mild,convertTo<Celsius>(k));
 }
-
+#if 0
 namespace talk {
 // vector space degrees for (K and °C)
 struct degrees: Linear<double, degrees, Out>{};
@@ -169,7 +169,7 @@ void testConversion(){
 }
 
 }
-
+#endif
 
 
 cute::suite make_suite_Degrees() {
@@ -179,10 +179,12 @@ cute::suite make_suite_Degrees() {
     s.push_back(CUTE(testCelsiusFromKelvin));
     s.push_back(CUTE(testKelvinFromCelsius));
     s.push_back(CUTE(testConversion));
+#if 0
     s.push_back(CUTE(talk::thisIsADegreesTest));
     s.push_back(CUTE(talk::thisIsAKelvinDegreesTest));
     s.push_back(CUTE(talk::testCelsiusFromKelvin));
     s.push_back(CUTE(talk::testKelvinFromCelsius));
     s.push_back(CUTE(talk::testConversion));
+#endif
 	return s;
 }

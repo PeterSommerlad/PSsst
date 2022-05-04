@@ -18,6 +18,7 @@
 #include "EnumOperators.h"
 #include "ArithmeticOperationsTest.h"
 #include "DoubleErsatz.h"
+#include "OhmsLaw.h"
 
 
 using namespace pssst;
@@ -198,6 +199,8 @@ bool runAllTests(int argc, char const *argv[]) {
 	ArithmeticOperationsTest.push_back(CUTE(p0109::test_energy_expressions));
 	ArithmeticOperationsTest.push_back(CUTE(demo_output_crtp::demo_output_crtp));
   success &= runner(ArithmeticOperationsTest, "ArithmeticOperationsTest");
+    cute::suite OhmsLaw = make_suite_OhmsLaw();
+    success &= runner(OhmsLaw, "OhmsLaw");
 	return success;
 }
 
