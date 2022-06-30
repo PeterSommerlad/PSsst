@@ -19,6 +19,7 @@
 #include "ArithmeticOperationsTest.h"
 #include "DoubleErsatz.h"
 #include "OhmsLaw.h"
+#include "xxx.h"
 
 
 using namespace pssst;
@@ -201,6 +202,8 @@ bool runAllTests(int argc, char const *argv[]) {
   success &= runner(ArithmeticOperationsTest, "ArithmeticOperationsTest");
     cute::suite OhmsLaw = make_suite_OhmsLaw();
     success &= runner(OhmsLaw, "OhmsLaw");
+    cute::suite xxx = make_suite_xxx();
+    success &= runner(xxx, "xxx");
 	return success;
 }
 

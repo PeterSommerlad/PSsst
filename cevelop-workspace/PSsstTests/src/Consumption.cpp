@@ -2,8 +2,6 @@
 #include "pssst.h"
 #include "cute.h"
 
-#include <iostream>
-
 #include <sstream>
 
 using namespace pssst;
