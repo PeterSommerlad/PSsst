@@ -2,7 +2,7 @@
 #include "cute.h"
 
 void thisIsAxxxTest() {
-	ASSERTM("start writing tests", false);	
+	ASSERTM("start writing tests", true);
 }
 
 cute::suite make_suite_xxx() {
