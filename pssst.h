@@ -478,6 +478,7 @@ using Additive=ops<V,UMinus,Abs,Add,Sub>;
 
 namespace detail_{
 // detect prefix and suffix static members for output
+#if 0
 template<typename U, typename = void>
 struct has_prefix : std::false_type {};
 template<typename U>
@@ -488,17 +489,28 @@ struct has_suffix: std::false_type {};
 template<typename U>
 struct has_suffix<U, std::void_t<decltype(std::declval<std::ostream&>() << U::suffix)>>
 : std::true_type {};
+#endif
+template<typename U, typename = void>
+constexpr bool has_prefix_v {false};
+template<typename U>
+constexpr bool has_prefix_v<U, std::void_t<decltype(std::declval<std::ostream&>() << U::prefix)>>
+{true};
+template<typename U, typename = void>
+constexpr bool has_suffix_v{false};
+template<typename U>
+constexpr bool has_suffix_v<U, std::void_t<decltype(std::declval<std::ostream&>() << U::suffix)>>
+{true};
 }
 template <typename U>
 struct Out{
   friend std::ostream&
   operator<<(std::ostream &out, U const &r) {
-    if constexpr (detail_::has_prefix<U>{}){
+    if constexpr (detail_::has_prefix_v<U>){
       out << U::prefix;
     }
     auto const &[v]=r;
     out << v;
-    if constexpr (detail_::has_suffix<U>{}){
+    if constexpr (detail_::has_suffix_v<U>){
       out << U::suffix;
     }
     return out;
