@@ -37,7 +37,6 @@ Release
 Debug
 .metadata/
 .settings/
-.cproject
 *Test.xml
 .*.html
 cevelop-workspace/PSsstTests/PSsstTests.xml
