@@ -371,49 +371,41 @@ using Additive=ops<V,UPlus,UMinus,Abs,Add,Sub,Inc,Dec>;
 namespace detail__{
 // detect prefix and suffix static members for output
 template <typename U, typename = detail__::void_t<>>
-struct has_prefixc : std::false_type{};
+struct has_prefix : std::false_type{};
 template <typename U>
-struct has_prefixc<U, detail__::void_t<decltype(U::prefix)>> : std::true_type{};
+struct has_prefix<U, detail__::void_t<decltype(U::prefix)>> : std::true_type{};
 template <typename U, typename = detail__::void_t<>>
-struct has_suffixc : std::false_type{};
+struct has_suffix : std::false_type{};
 template <typename U>
-struct has_suffixc<U, detail__::void_t<decltype(U::suffix)>> : std::true_type{};
-template <typename U>
-constexpr bool has_prefix = has_prefixc<U>::value;
-template <typename U>
-constexpr bool has_suffix = has_suffixc<U>::value;
-template<bool b>
-using bool_constant = std::conditional_t<b,std::true_type,std::false_type>;
+struct has_suffix<U, detail__::void_t<decltype(U::suffix)>> : std::true_type{};
 }
 template <typename U>
-struct Out{
-private:
+class Out{
   static
   std::ostream &
-  out__(std::ostream &out, U const &r, std::true_type, std::true_type)
+  print(std::ostream &out, U const &r, std::true_type, std::true_type)
   {
     return out << U::prefix << r.value << U::suffix;
   }
   static std::ostream&
-  out__(std::ostream &out, U const &r, std::true_type, std::false_type)
+  print(std::ostream &out, U const &r, std::true_type, std::false_type)
   {
       return out << U::prefix << r.value;
   }
   static std::ostream&
-  out__(std::ostream &out, U const &r, std::false_type, std::true_type)
+  print(std::ostream &out, U const &r, std::false_type, std::true_type)
   {
     return out << r.value << U::suffix;
   }
   static std::ostream&
-  out__(std::ostream &out, U const &r, std::false_type, std::false_type)
+  print(std::ostream &out, U const &r, std::false_type, std::false_type)
   {
     return out << r.value;
   }
-
   friend std::ostream&
   operator<<(std::ostream &out, U const &r) {
     using namespace detail__;
-     return out__(out,r,bool_constant<has_prefix<U>>{},bool_constant<has_suffix<U>>{});
+     return print(out,r,has_prefix<U>{},has_suffix<U>{});
   }
 };
 
