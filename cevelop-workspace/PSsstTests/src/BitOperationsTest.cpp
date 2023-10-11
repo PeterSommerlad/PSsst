@@ -7,9 +7,11 @@
 using namespace pssst;
 struct U_int16 :
 #ifdef USE_STRONG
-		strong<std::uint16_t,U_int16>,
+		strong<std::uint16_t,U_int16
+#else
+		ops<U_int16
 #endif
-				 ops<U_int16, Eq, Out, BitOps, ShiftOps, ShiftOpsSym>
+				 , Eq, Out, BitOps, ShiftOps, ShiftOpsSym>
 {
 #ifndef USE_STRONG
 	constexpr explicit U_int16(std::uint16_t val) noexcept :value{val}{}
@@ -31,7 +33,7 @@ static_assert(84u == (U_int16{21} << 2).value);
 static_assert(21u == (U_int16{42} >> 1).value);
 // fails as it should: static_assert(21u == (U_int16{42} >> 17).value);
 
-struct fail_bitops:strong<int,fail_bitops>,ops<fail_bitops,Eq,BitOps>{
+struct fail_bitops:strong<int,fail_bitops,Eq,BitOps>{
 };
 
 //static_assert((fail_bitops{1} | fail_bitops{2} ) == fail_bitops{3});

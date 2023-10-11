@@ -10,7 +10,7 @@ struct literGas
 		: strong<double,literGas,Additive,Order,Out>{
 			constexpr static inline auto  suffix=" l";
 		};
-
+static_assert(std::is_aggregate_v<literGas>);
 struct kmDriven:strong<double,kmDriven>
 ,ScalarMultImpl<kmDriven,double>,Out<kmDriven>{
 	constexpr static inline auto  prefix="driven ";

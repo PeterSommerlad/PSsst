@@ -297,8 +297,7 @@ struct literGas: pssst::ops<literGas, pssst::Eq, pssst::Out> {
   operator<=>(literGas const &) const noexcept = default;
   // C++20 defaulted comparison
 };
-struct kmDriven: pssst::strong<double, kmDriven>, pssst::ops<
-    kmDriven, pssst::Out> {
+struct kmDriven: pssst::strong<double, kmDriven, pssst::Out> {
   constexpr auto
   operator<=>(kmDriven const &) const noexcept = default;
   // C++20 defaulted comparison
@@ -319,7 +318,7 @@ literper100km consumption(literGas liter, kmDriven km) {
 void demonstrateStrongTypeProblem() {
   literGas consumed{{}, 40};
   kmDriven distance{500};
-  ASSERT_EQUAL(literper100km({}, 8.),
+  ASSERT_EQUAL((literper100km{ {},8.}),
       consumption(consumed, distance));
   // demonstrateStrongTypeProblem: literper100km{8.1} == consumption(consumed,distance) expected: 8.1 but was: 8
 }
@@ -375,7 +374,7 @@ literper100km consumption(literGas liter, kmDriven km) {
 void demonstrateThatEqualityComparisonIsWrong() {
   literGas consumed{{}, 40};
   kmDriven distance{{}, 500};
-  ASSERT_EQUAL(literper100km({}, {}, 8.1),
+  ASSERT_EQUAL((literper100km{{}, {}, 8.1}),
       consumption(consumed, distance));
   // demonstrateStrongTypeProblem: literper100km{8.1} == consumption(consumed,distance) expected: 8.1 but was: 8
 }
@@ -442,7 +441,7 @@ literper100km consumption(literGas liter, kmDriven km) {
 void demonstrateStrongTypeProblem() {
   literGas consumed{{}, 40};
   kmDriven distance{{}, 500};
-  ASSERT_EQUAL(literper100km({}, {}, 8.),
+  ASSERT_EQUAL((literper100km{{}, {}, 8.}),
       consumption(consumed, distance));
   // demonstrateStrongTypeProblem: literper100km{8.1} == consumption(consumed,distance) expected: 8.1 but was: 8
 }
@@ -479,74 +478,41 @@ literper100km consumption(literGas liter, kmDriven km) {
 void demonstrateStrongTypeProblem() {
   literGas l{{}, 40};
   kmDriven km{{}, {}, 500};
-  ASSERT_EQUAL(literper100km({}, {}, 8.), consumption(l, km));
+  ASSERT_EQUAL((literper100km{{}, {}, 8.}), consumption(l, km));
 }
 
 
 }
 
 cute::suite make_suite_BetterSoftwareTalkExamples() {
-  cute::suite s{};
+  cute::suite s { };
   s.push_back(CUTE(nostrong::demonstrateStrongTypeProblem));
   s.push_back(CUTE(nostrong::areConsumptionAndefficiencythesame));
-  s.push_back(
-      CUTE(strong_with_struct::demonstrateStrongTypeProblem));
-  s.push_back(
-      CUTE(strong_with_struct1::demonstrateStrongTypeProblem));
-  s.push_back(
-      CUTE(
-          strong_with_struct1::areConsumptionAndefficiencythesame));
-  s.push_back(
-      CUTE(
-          strong_with_struct_equalityoperator::demonstrateStrongTypeProblem));
-  s.push_back(
-      CUTE(
-          strong_with_struct_equalityoperator::testThatdefaultedequalityalsodefinesinequality));
-  s.push_back(
-      CUTE(
-          strong_with_struct_comparison::demonstrateStrongTypeProblem));
-  s.push_back(
-      CUTE(
-          strong_with_struct_comparison::testThatdefaultedequalityalsodefinesinequality));
-  s.push_back(
-      CUTE(
-          strong_with_struct_comparison::demonstrateLessThanComparison));
-  s.push_back(
-      CUTE(
-          strong_with_struct_comparison::demonstrateLessInAssert));
-  s.push_back(
-      CUTE(
-          strong_with_struct_output::demonstrateStrongTypeProblem));
-  s.push_back(
-      CUTE(
-          strong_with_struct_output::demonstrateLessThanComparison));
-  s.push_back(
-      CUTE(strong_with_struct_output::demonstrateLessInAssert));
-  s.push_back(
-      CUTE(
-          strong_with_struct_output_mixin::demonstrateStrongTypeProblem));
-  s.push_back(
-      CUTE(
-          strong_with_struct_output_mixin::demonstrateLessThanComparison));
-  s.push_back(
-      CUTE(
-          strong_with_struct_output_mixin::demonstrateLessInAssert));
-  s.push_back(
-      CUTE(
-          strong_with_struct_output_generic::demonstrateStrongTypeProblem));
-  s.push_back(
-      CUTE(
-          strong_with_struct_output_generic::demonstrateLessThanComparison));
-  s.push_back(
-      CUTE(
-          strong_with_struct_output_generic::demonstrateLessInAssert));
+  s.push_back(CUTE(strong_with_struct::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_struct1::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_struct1::areConsumptionAndefficiencythesame));
+  s.push_back(CUTE(strong_with_struct_equalityoperator::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_struct_equalityoperator::testThatdefaultedequalityalsodefinesinequality));
+  s.push_back(CUTE(strong_with_struct_comparison::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_struct_comparison::testThatdefaultedequalityalsodefinesinequality));
+  s.push_back(CUTE(strong_with_struct_comparison::demonstrateLessThanComparison));
+  s.push_back(CUTE(strong_with_struct_comparison::demonstrateLessInAssert));
+  s.push_back(CUTE(strong_with_struct_output::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_struct_output::demonstrateLessThanComparison));
+  s.push_back(CUTE(strong_with_struct_output::demonstrateLessInAssert));
+  s.push_back(CUTE(strong_with_struct_output_mixin::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_struct_output_mixin::demonstrateLessThanComparison));
+  s.push_back(CUTE(strong_with_struct_output_mixin::demonstrateLessInAssert));
+  s.push_back(CUTE(strong_with_struct_output_generic::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_struct_output_generic::demonstrateLessThanComparison));
+  s.push_back(CUTE(strong_with_struct_output_generic::demonstrateLessInAssert));
   s.push_back(CUTE(demonstrateBadOperators));
-	s.push_back(CUTE(strong_with_cmp_output_mixin::demonstrateThatEqualityComparisonIsWrong));
-	s.push_back(CUTE(strong_with_cmp_output_mixin::demonstrateLessThanComparisonIsWrong));
-	s.push_back(CUTE(strong_with_cmp_output_mixin::demonstrateBaseClassDefaulted3wayComparisonIsWrong));
-	s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateStrongTypeProblem));
-	s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateLessThanComparison));
-	s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateLessInAssert));
-	s.push_back(CUTE(strong_type_scalarmult::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_cmp_output_mixin::demonstrateThatEqualityComparisonIsWrong));
+  s.push_back(CUTE(strong_with_cmp_output_mixin::demonstrateLessThanComparisonIsWrong));
+  s.push_back(CUTE(strong_with_cmp_output_mixin::demonstrateBaseClassDefaulted3wayComparisonIsWrong));
+  s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateStrongTypeProblem));
+  s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateLessThanComparison));
+  s.push_back(CUTE(strong_with_cmp_mixin_works::demonstrateLessInAssert));
+  s.push_back(CUTE(strong_type_scalarmult::demonstrateStrongTypeProblem));
   return s;
 }

@@ -1,18 +1,56 @@
-#include "Boolean.h"
 #include "BooleanTest.h"
 #include "cute.h"
-
-#include <cstddef>
+#include <initializer_list>
 #include <utility>
+#include "pssst.h"
+
+// a better Bool than bool, used for comparisons
+struct Bool {
+    constexpr Bool() noexcept=default;
+    constexpr Bool(bool const b) noexcept :
+        val { b } {
+    }
+    friend constexpr Bool
+    operator==(Bool const &l, Bool const& r) noexcept {
+        return Bool{l.val == r.val};
+    }
+    friend constexpr Bool
+    operator!=(Bool const &l, Bool const& r) noexcept {
+        return !(l==r);
+    }
+    friend constexpr Bool
+    operator !(Bool const &l){
+        return Bool{! l.val};
+    }
+    // convert from pointers
+    template <typename T>
+    constexpr Bool(T * const x) noexcept :
+        val { x!= nullptr }{
+        }
+    constexpr Bool(std::nullptr_t) noexcept {}
+    // other conversion attempts are not allowed
+    template <typename T, typename = std::enable_if_t<
+                        std::is_constructible<bool,T>::value
+                        && std::is_class_v<
+                             std::remove_cv_t<std::remove_reference_t<T>>
+                             >> >
+    constexpr Bool(T const &x) noexcept
+    :Bool(static_cast<bool>(x)){}
+    constexpr explicit operator bool() const noexcept {
+        return val;
+    }
+    bool val{};
+};
 
 using namespace pssst;
 
-
-
-static_assert(detail__::non_numeric_convertible_to_bool<std::stringstream&>);
-static_assert(! detail__::non_numeric_convertible_to_bool<std::nullptr_t>);
-
 struct BoolTest {
+  // test Bool properties
+  static_assert(sizeof(Bool)==sizeof(bool));
+  static_assert(std::is_trivially_copyable_v<Bool>);
+  static_assert(std::is_trivially_destructible_v<Bool>);
+
+
 	constexpr static Bool const t { true };
 	constexpr static Bool const f { false };
 	void ConvertsTobool() const {
@@ -103,15 +141,35 @@ struct BoolTest {
         t && ++i;
         ASSERT_EQUAL(1,i);
     }
+	void OperatorBuiltInOrShortCutWithCast() const {
+		int i{};
+		static_cast<bool>(t) || ++i; // select built-in || with cast to bool.
+		ASSERT_EQUAL(0,i);
+	}
+	void OperatorBuiltInOrShortCutWithCastPass() const {
+		int i{};
+		static_cast<bool>(f)  || ++i;
+		ASSERT_EQUAL(1,i);
+	}
+	void OperatorBuiltInAndShortCutWithCast() const {
+		int i{};
+		static_cast<bool>(f)  && ++i;
+		ASSERT_EQUAL(0,i);
+	}
+	void OperatorBuiltInAndShortCutWithCastPass() const {
+		int i{};
+		static_cast<bool>(t)  && ++i;
+		ASSERT_EQUAL(1,i);
+	}
 
-	struct Num:strong<int,Num>,Order<Num,Bool>{};
-
-	static_assert(Num{3} == Num{3});
-	static_assert(not(Num{3} != Num{3}));
-	static_assert(Num{3} <= Num{3});
-	static_assert(Num{3} >= Num{3});
-	static_assert(!(Num{3} < Num{3}));
-	static_assert(!(Num{3} > Num{3}));
+//	struct Num:strong<int,Num>,Order<Num,Bool>{};
+//
+//	static_assert(Num{3} == Num{3});
+//	static_assert(not(Num{3} != Num{3}));
+//	static_assert(Num{3} <= Num{3});
+//	static_assert(Num{3} >= Num{3});
+//	static_assert(!(Num{3} < Num{3}));
+//	static_assert(!(Num{3} > Num{3}));
 
 	struct Num3:strong<double,Num3>,ops<Num3,Cmp3way>{};
 	static_assert(Num3{3} == Num3{3});
@@ -136,12 +194,12 @@ struct BoolTest {
 	static_assert(!(Num3{3} < NumX{3}));
 	static_assert(!(NumX{3} > Num3{3}));
 
-    static_assert(Num{3} == Num{3});
-    static_assert(not(Num{3} != Num{3}));
-    static_assert(Num{3} <= Num{3});
-    static_assert(Num{3} >= Num{3});
-    static_assert(!(Num{3} < Num{3}));
-    static_assert(!(Num{3} > Num{3}));
+//    static_assert(Num{3} == Num{3});
+//    static_assert(not(Num{3} != Num{3}));
+//    static_assert(Num{3} <= Num{3});
+//    static_assert(Num{3} >= Num{3});
+//    static_assert(!(Num{3} < Num{3}));
+//    static_assert(!(Num{3} > Num{3}));
 	// check for no arithmetic conversion
 	template<typename FROM,typename=void >
 	struct BoolDoesConvertFrom:std::false_type{};

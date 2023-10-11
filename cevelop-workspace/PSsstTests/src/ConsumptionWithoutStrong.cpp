@@ -79,7 +79,7 @@ struct literGas: ops<literGas, Additive, Order, Out> {
 };
 static_assert(sizeof(literGas)==sizeof(double)); // ensure empty bases are squashed
 static_assert(std::is_trivially_copyable_v<literGas>); // ensure efficient argument passing
-static_assert(not needsbaseinit<literGas>{},"does liter need base init?");
+static_assert(not pssst::detail_::needsbaseinit<literGas>{},"does liter need base init?");
 
 
 void testLiterWithoutStrong(){

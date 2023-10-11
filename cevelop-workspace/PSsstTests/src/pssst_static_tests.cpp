@@ -1,112 +1,13 @@
 #include "pssst.h"
-
-#include <cstddef>
-#include <tuple>
-
-#include <utility>
-
-namespace pssstincub {
-
-using namespace pssst;
-
-namespace detail__ {
-//taken from: https://stackoverflow.com/a/39784019
-struct filler { template< typename type > operator type && (); };
-
-template< typename aggregate, 
-          typename index_sequence = std::index_sequence<>, 
-          typename = void >
-struct aggregate_arity
-        : index_sequence
-{
-
-};
-
-template< typename aggregate, 
-          std::size_t ...indices >
-struct aggregate_arity< aggregate, 
-                        std::index_sequence< indices... >, 
-                        std::void_t< decltype(aggregate{(indices, std::declval< filler >())..., std::declval< filler >()}) > >
-    : aggregate_arity< aggregate, 
-                       std::index_sequence< indices..., sizeof...(indices) > >
-{
-
-};
-
-template<typename T>
-concept
-a_class_type = std::is_class_v<T>;
-
-
-
-
-
-
-template<typename T,typename =void>
-struct
-is_strong:std::false_type{};
-
-template<typename T>
-struct
-is_strong<T,std::void_t< decltype([t=std::declval<T>()]{auto [x]=t;return x;})>> : std::true_type{};
-
-template<typename T>
-struct
-is_strong<T,std::void_t< decltype([t=std::declval<T>()]{auto [x,y]=t;return x;})>> : std::false_type{};
-
-
-// does not work, even in C++20... lambda body is hard error on instantiation
-//template<typename T>
-//constexpr
-//bool detect<T,decltype([t=std::declval<T>()]{ auto [x] = t;}, true)(true)> = true;
-
-//template<typename T>
-//constexpr bool detect = requires { [](T t){ auto const &[x]=t; return x; }; };
-//static_assert(!detail__::detect<empty>); // compile error
-//static_assert(detail__::detect<one>);
-
-}
-struct empty{};
-struct one{int v;};
-struct two{int a,b;};
-struct ctor{ctor(int x):value{x}{} int value;};// fails, not an aggregate, but allows structured binding
-
-static_assert(detail__::aggregate_arity<empty>::size() == 0);
-static_assert(detail__::aggregate_arity<one>::size() == 1);
-static_assert(detail__::aggregate_arity<two>::size() == 2);
-static_assert(detail__::aggregate_arity<ctor>::size() != 1); // meh...
-
-//-----
-
-
-template<typename T>
-constexpr bool
-is_strong_v = std::is_class_v<T> && std::is_aggregate_v<T> && detail__::aggregate_arity<T>::size() == 1;
-
-template<typename T>
-concept a_strong_type = is_strong_v<T>;
-
-struct emptytype {};
-struct valuetype{ int a;};
-struct novaluetype{ int a,b;};
-class hidden{int i;};
-static_assert(! is_strong_v<int>);
-static_assert(! is_strong_v<emptytype>);
-static_assert(is_strong_v<valuetype>);
-static_assert(! is_strong_v<novaluetype>);
-static_assert(! is_strong_v<hidden>);
-}
+#include <concepts>
 namespace pssst {
-namespace testing___{
+namespace testing_{
 using ::pssst::underlying_value_type;
-
-
-
-static_assert(!needsbaseinit<int>{},"needsbasinit for built-in");
 
 struct Y {};
 struct X:Y{int v;};
-static_assert(needsbaseinit<X>{},"needsbasinit with empty class false");
+static_assert(detail_::needsbaseinit<X>{},"needsbasinit with empty class false");
+static_assert(!detail_::needsbaseinit<int>{},"needsbasinit for built-in");
 
 template <typename U, typename = std::void_t<>>
 struct is_vector_space : std::false_type{};
@@ -116,22 +17,53 @@ template<typename U>
 constexpr inline  bool is_vector_space_v=is_vector_space<U>::value;
 
 
+/// trying anti-compile tests... badly so far
+template<typename U, typename=void>
+struct doesnt_compile_less_twice:std::true_type{};
+
+struct testless:strong<int,testless,Order>{};
+
+template<typename U>
+struct doesnt_compile_less_twice<U,std::void_t<decltype(U{}< U{} < U{})>>:std::false_type{};
+
+#define expr(...) std::void_t<decltype(__VA_ARGS__)>
+
+#define dc(T,...) template<typename U> struct doesnt_compile_less_twice<U,expr(__VA_ARGS__)>:std::false_type{};
+
+
+static_assert(doesnt_compile_less_twice<testless>{});
+//----------
+
 
 static_assert(!is_vector_space_v<int>,"int is no absolute unit");
 
 
 
-struct bla:strong<int,bla,detail__::bind2<int,Linear>::template apply>{};
+struct bla:Linear<int,bla>{};
 static_assert(sizeof(bla)==sizeof(int));
 static_assert(!is_vector_space_v<bla>,"bla is absolute?");
 static_assert(0 == bla{0}.value, "check for subobject warning");
-struct blu:create_vector_space<blu,bla>{};
+struct blu:affine_space_for<blu,bla>{};
 static_assert(sizeof(blu)==sizeof(int));
 static_assert(is_vector_space_v<blu>,"blu should be vector space");
-static_assert(blu::origin==blu{0},"blu origin is zero");
+//static_assert(bool(blu::origin==blu{0}),"blu origin is zero");
 static_assert(blu{42}.value==bla{42}, "rel accessible");
 static_assert(std::is_same_v<int,underlying_value_type<bla>>,"..");
 
+constexpr bla x{42};
+constexpr bla eightyfour{84};
+static_assert(value(-x) == -value(x));
+//static_assert(abs(-x) == abs(x)); // std::abs not yet constexpr
+static_assert(x == x);
+static_assert(x != -x);
+static_assert(x + x == eightyfour);
+static_assert(x - x == bla{0});
+static_assert(x -  -x == eightyfour);
+static_assert(x * 2 == eightyfour);
+static_assert(2 * x == eightyfour);
+static_assert(eightyfour / 2 == x);
+static_assert(eightyfour / x == 2);
+static_assert(x % 5 == bla{2});
 
 // trait: is_ebo
 namespace detail{
@@ -172,11 +104,72 @@ static_assert(is_ebo_v<ExpLog<dummy>>," should be EBO enabled");
 static_assert(is_ebo_v<Root<dummy>>," should be EBO enabled");
 static_assert(is_ebo_v<Trigonometric<dummy>>,"Eq should be EBO enabled");
 static_assert(is_ebo_v<ScalarModulo<dummy,int>>,"Eq should be EBO enabled");
+static_assert(is_ebo_v<BitOps<dummy>>,"BitOps should be EBO enabled");
+static_assert(is_ebo_v<ShiftOps<dummy>>,"ShiftOps should be EBO enabled");
+static_assert(is_ebo_v<Inc<dummy>>,"Inc should be EBO enabled");
+static_assert(is_ebo_v<Dec<dummy>>,"Dec should be EBO enabled");
+static_assert(is_ebo_v<UPlus<dummy>>,"UPlus should be EBO enabled");
+static_assert(is_ebo_v<UMinus<dummy>>,"UMinus should be EBO enabled");
+static_assert(is_ebo_v<Value<dummy>>,"Value should be EBO enabled");
+static_assert(is_ebo_v<Rounding<dummy>>,"Rounding should be EBO enabled");
+static_assert(is_ebo_v<Abs<dummy>>,"Abs should be EBO enabled");
+static_assert(is_ebo_v<ExpLogPlain<dummy2>>,"ExpLog should be EBO enabled");
+static_assert(is_ebo_v<RootPlain<dummy2>>,"Root should be EBO enabled");
+static_assert(is_ebo_v<TrigonometricPlain<dummy2>>,"Trigonometric should be EBO enabled");
+static_assert(is_ebo_v<ScalarModulo<dummy2,unsigned>>,"ScalarModulo should be EBO enabled");
+static_assert(is_ebo_v<ScalarMult<double>::apply<dummy2>>,"ScalarModulo should be EBO enabled");
 
 struct dummy_d:ops<dummy,Sub,Add> {
 	double v;
 };
 static_assert(sizeof(double)==sizeof(dummy_d),"dummy_d should be same size as double");
+
+namespace test_ArithModulo{
+
+struct wrong:strong<double,wrong>,ArithMultImpl<wrong,int>, Eq<wrong>{};
+static_assert(detail_::has_check_base_v<wrong>);
+// fails to compile due to check that multiplication base is same as value type
+// static_assert(wrong{1} == wrong{1}/wrong{1});
+// static_assert(wrong{1} == wrong{1}*wrong{1});
+// static_assert(wrong{1} == wrong{1}%wrong{1});
+enum bla:int{};
+constexpr bla operator%(bla ,bla ){ return bla{};}
+static_assert(detail_::supports_modulo_v<bla>);
+
+}
+
+struct liter : ops<liter,Additive,Order,Out>{
+    // needs ctor to avoid need for extra {} below
+    constexpr explicit liter(double lit):l{lit}{};
+    double l{};
+};
+static_assert(sizeof(liter)==sizeof(double)); // ensure empty bases are squashed
+static_assert(std::is_trivially_copyable_v<liter>); // ensure efficient argument passing
+static_assert(not detail_::needsbaseinit<liter>{},"does liter need base init?");
+
+
+
+}
+
+namespace testWithEnum {
+
+enum ue : unsigned {};
+constexpr
+ue operator |(ue l, ue r){ return ue{unsigned(l)|unsigned(r)}; }
+
+struct sue : strong<ue,sue,BitOps, Value>{};
+
+static_assert(0 == value(sue{} | sue{}));
+
+enum ie : int {};
+constexpr
+ie operator |(ie l, ie r){ return ie{int(l)|int(r)}; }
+
+struct sie : strong<ie,sie,BitOps, Value>{};
+
+// fails to compile as expected: error: static assertion failed: bitops are only be enabled for unsigned types
+//static_assert(0 == value(sie{} | sie{}));
+
 }
 
 
@@ -200,3 +193,4 @@ static_assert((3 <=> Int{3}) == std::strong_ordering::equal);
 
 
 }
+

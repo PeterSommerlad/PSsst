@@ -18,9 +18,11 @@
 #include "EnumOperators.h"
 #include "BetterSoftwareTalkExamples.h"
 
+#include <memory>
+
 
 using namespace pssst;
-struct Int: strong<int,Int>,ops<Int,Value,Order,Inc,Add,Out>{
+struct Int: strong<int,Int,Value,Order,Inc,Add,Out>{
 };
 
 namespace {
@@ -29,7 +31,7 @@ Int  dummy{42};
 int &y = value_ref(dummy);
 
 }
-struct Size: strong<unsigned,Size>,ops<Size,Order,Inc,Add,Out> {
+struct Size: strong<unsigned,Size,Order,Inc,Add,Out> {
 };
 static_assert(sizeof(Size)==sizeof(unsigned),"no overhead");
 static_assert(std::is_trivially_copyable_v<Size>,"should be trivial");
@@ -46,7 +48,7 @@ void testSizeworks(){
 
 
 
-	struct uptest:strong<int,uptest>,ops<uptest,UPlus>{};
+	struct uptest:strong<int,uptest,UPlus>{};
 
 
 void testUPlus(){
@@ -54,26 +56,26 @@ void testUPlus(){
 	ASSERT_EQUAL(one.value,(+one).value);
 }
 void testUMinus(){
-	struct umtest:strong<int,umtest>,ops<umtest,UMinus>{};
+	struct umtest:strong<int,umtest,UMinus>{};
 	umtest one{1};
 	ASSERT_EQUAL(-(one.value),(-one).value);
 }
 void testUInc(){
-	struct uinctest:strong<int,uinctest>,ops<uinctest,Inc>{};
+	struct uinctest:strong<int,uinctest,Inc>{};
 	uinctest var{1};
 	ASSERT_EQUAL(2,(++var).value);
 	ASSERT_EQUAL(2,(var++).value);
 	ASSERT_EQUAL(3,var.value);
 }
 void testUDec(){
-	struct udtest:strong<int,udtest>,ops<udtest,Dec>{};
+	struct udtest:strong<int,udtest,Dec>{};
 	udtest var{2};
 	ASSERT_EQUAL(1,(--var).value);
 	ASSERT_EQUAL(1,(var--).value);
 	ASSERT_EQUAL(0,var.value);
 }
 
-struct S:strong<std::string,S>,ops<S,Value,Out,Eq>{};
+struct S:strong<std::string,S,Value,Out,Eq>{};
 
 void testWithStringBase(){
 	S s{"hello"};
@@ -91,8 +93,7 @@ void testMoveWithStringBase(){
 	ASSERT_EQUAL(intptr_t(data),intptr_t(other.data()));
 }
 
-struct WaitC:strong<unsigned,WaitC>
-            ,ops<WaitC,Eq,Inc,Out>{};
+struct WaitC:strong<unsigned,WaitC,Eq,Inc,Out>{};
 static_assert(sizeof(unsigned)==sizeof(WaitC));
 void testWaitCounter(){
 	WaitC c{};
@@ -103,6 +104,89 @@ void testWaitCounter(){
 	ASSERT_EQUAL(2,c.value);
 }
 
+namespace testingdestroyingdelete {
+using namespace pssst;
+
+struct check:strong<int,check,Additive>{
+inline static std::string forcheck{};
+~check(){
+  forcheck.append(" destructor called\n");
+}
+};
+using holderbase = pssst::detail_::holder<int,check>;
+static_assert(std::is_base_of_v<holderbase, check>);
+    template<typename BASE, typename... REST>
+    BASE* determineBasePtr(void(*)(BASE *,std::destroying_delete_t,REST...));
+
+    template<typename T>
+    constexpr bool has_destroying_delete_v = requires(T* t){
+    T::operator delete(t,std::destroying_delete);
+    static_cast<void(*)(decltype(determineBasePtr(&T::operator delete)),
+                       std::destroying_delete_t)>(&T::operator delete);
+    } ||
+    requires(T* t){
+    T::operator delete(t,std::destroying_delete, sizeof(T));
+    static_cast<void(*)(decltype(determineBasePtr(&T::operator delete)),
+                        std::destroying_delete_t,std::size_t)>(&T::operator delete);
+    } ||
+    requires(T* t){
+    T::operator delete(t,std::destroying_delete,std::align_val_t(alignof(T)));
+    static_cast<void(*)(decltype(determineBasePtr(&T::operator delete)),
+                       std::destroying_delete_t,std::align_val_t)>(&T::operator delete);
+    } ||
+    requires(T* t){
+    T::operator delete(t,std::destroying_delete,sizeof(T),std::align_val_t(alignof(T)));
+    static_cast<void(*)(decltype(determineBasePtr(&T::operator delete)),
+                        std::destroying_delete_t,std::size_t,std::align_val_t)>(&T::operator delete);
+    };
+
+    template<typename T>
+    concept has_destroying_delete = has_destroying_delete_v<T>;
+
+static_assert(not has_destroying_delete<int>);
+static_assert(has_destroying_delete<check>);
+static_assert(has_destroying_delete<holderbase>);
+//static_assert(has_delete<holderbase>);
+
+void testIfDestroyingDeleteWorks(){
+  {
+    auto p = std::make_unique<check>(check{42});
+    check::forcheck.clear();
+    std::unique_ptr<holderbase> pb = std::move(p);
+
+  }
+  ASSERT_EQUAL(" destructor called\n",check::forcheck);
+}
+void testIfDestroyingDeleteWorks2(){
+  // this test would cause undefined behavior, therefore deregistered
+  {
+    auto p = std::make_unique<check>(check{42});
+    check::forcheck.clear();
+    std::unique_ptr<detail_::mixinopsthisclassshouldneverbeusedforderivedtobaseconversion<check, Additive>> pb = std::move(p);
+
+  }
+  ASSERT_EQUAL(" destructor called\n",check::forcheck);
+}
+struct literGas: ops<literGas, Additive, Order, Out> {
+  constexpr explicit literGas(double lit={}) : l{lit} {}
+  double l;
+  constexpr static inline auto suffix = " l";
+  inline static std::string forcheck{};
+  ~literGas(){ forcheck.append("~literGas called\n"); }
+};
+void testIfDestroyingDeleteWorksWithoutStrongBase(){
+  {
+    auto p = std::make_unique<literGas>(literGas{42});
+    literGas::forcheck.clear();
+    // no longer compiles
+    //std::unique_ptr<Add<literGas>> pb = std::move(p);
+
+  }
+  ASSERT_EQUAL("~literGas called\n",literGas::forcheck);
+}
+
+
+}
 
 
 bool runAllTests(int argc, char const *argv[]) {
@@ -116,6 +200,10 @@ bool runAllTests(int argc, char const *argv[]) {
 	s.push_back(CUTE(testUDec));
 	s.push_back(CUTE(testWaitCounter));
 	s.push_back(CUTE(testMoveWithStringBase));
+  s.push_back(CUTE(testingdestroyingdelete::testIfDestroyingDeleteWorks));
+  s.push_back(CUTE(testingdestroyingdelete::testIfDestroyingDeleteWorksWithoutStrongBase));
+  // this test would cause undefined behavior:
+  //s.push_back(CUTE(testingdestroyingdelete::testIfDestroyingDeleteWorks2));
 	cute::xml_file_opener xmlfile(argc, argv);
 	cute::xml_listener<cute::ide_listener<>> lis(xmlfile.out);
 	auto const runner = cute::makeRunner(lis, argc, argv);
