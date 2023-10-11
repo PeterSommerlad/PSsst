@@ -88,7 +88,7 @@ struct dummy{int i;};
 static_assert(is_ebo_v<Add<dummy>>,"Add should be EBO enabled");
 static_assert(is_ebo_v<Sub<dummy>>,"Sub should be EBO enabled");
 static_assert(is_ebo_v<Out<dummy>>,"Out should be EBO enabled");
-//static_assert(is_ebo_v<Eq<dummy>>,"Eq should be EBO enabled");
+static_assert(is_ebo_v<Eq<dummy>>,"Eq should be EBO enabled");
 static_assert(is_ebo_v<Order<dummy>>,"Order should be EBO enabled");
 static_assert(is_ebo_v<BitOps<dummy>>,"BitOps should be EBO enabled");
 static_assert(is_ebo_v<ShiftOps<dummy>>,"ShiftOps should be EBO enabled");
@@ -104,7 +104,11 @@ static_assert(is_ebo_v<RootPlain<dummy>>,"Root should be EBO enabled");
 static_assert(is_ebo_v<TrigonometricPlain<dummy>>,"Trigonometric should be EBO enabled");
 static_assert(is_ebo_v<ScalarModulo<dummy,unsigned>>,"ScalarModulo should be EBO enabled");
 static_assert(is_ebo_v<ScalarMult<double>::apply<dummy>>,"ScalarModulo should be EBO enabled");
-
+static_assert(is_ebo_v<ops<dummy,Add,Sub,Out,Order,
+                      BitOps,ShiftOps,Inc,Dec,UPlus,UMinus,
+                      Value,Rounding,Abs,ExpLogPlain,
+                      RootPlain,TrigonometricPlain,
+                      ScalarMult<double>::template apply>>,"ops should be EBO");
 struct dummy_d:ops<dummy,Sub,Add> {
 	double v;
 };

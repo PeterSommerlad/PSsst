@@ -36,31 +36,37 @@ struct bind2{
   using apply=T<A,B>;
 };
 template <typename V, typename TAG>
-struct holder {
+struct holder_thisclassshouldneverbeusedforderivedtobaseconversion {
   static_assert(std::is_object_v<V>, "must keep real values - no references or incomplete types allowed");
   using value_type = V;
   V value { };
 };
-
-
+// make all regular mix-ins private empty bases... indirection keeps aggregateness
+// so only three public bases are available for accidental derived-to-base conversion
+// the C++20 version with destroying delete in the holder eliminates two of them, except this one
+// therefore the ugly name
+template <typename TAG, template <typename ...> class ...CRTP>
+struct mixinopsthisclassshouldneverbeusedforderivedtobaseconversion:private CRTP<TAG>...{
+};
 }
-
 #ifndef NDEBUG
-#define pssst_assert(cond) detail_::throwing_assert((cond),#cond)
+#define pssst_assert(cond) ::pssst::detail_::throwing_assert((cond),#cond)
 #else
 #define pssst_assert(cond)
 #endif
 
 
 // apply multiple operator mix-ins and keep this an aggregate
-template <typename U, template <typename ...> class ...CRTP>
-struct ops:CRTP<U>...{
+template <typename TAG, template <typename ...> class ...CRTP>
+struct ops:detail_::mixinopsthisclassshouldneverbeusedforderivedtobaseconversion<TAG, CRTP...>{
 };
 
 // Either use this as the first base of TAG or nothing
 template <typename V, typename TAG, template<typename...>class ...OPS>
-struct strong:detail_::holder<V,TAG>,ops<TAG,OPS...> {
-};
+struct strong
+    :detail_::holder_thisclassshouldneverbeusedforderivedtobaseconversion<V,TAG>
+    ,detail_::mixinopsthisclassshouldneverbeusedforderivedtobaseconversion<TAG,OPS...>
+{};
 
 
 template <typename T>

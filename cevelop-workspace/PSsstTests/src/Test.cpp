@@ -23,19 +23,20 @@
 
 
 using namespace pssst;
-struct Int: strong<int,Int>,ops<Int,Value,Order,Inc,Add,Out>{
+struct Int: strong<int,Int,Value,Order,Inc,Add,Out>{
 };
 
 namespace {
 Int  dummy{42};
 
-int &y = value_ref(dummy);
+[[maybe_unused]]int &y = value_ref(dummy);
 
 }
-struct Size: strong<unsigned,Size>,ops<Size,Order,Inc,Add,Out> {
+struct Size: strong<unsigned,Size,Order,Inc,Add,Out> {
 };
 static_assert(sizeof(Size)==sizeof(unsigned),"no overhead");
 static_assert(std::is_trivially_copyable_v<Size>,"should be trivial");
+static_assert(std::is_aggregate_v<Size>);
 
 void testSizeworks(){
 	Size sz{42};
@@ -49,7 +50,7 @@ void testSizeworks(){
 
 
 
-	struct uptest:strong<int,uptest>,ops<uptest,UPlus>{};
+	struct uptest:strong<int,uptest,UPlus>{};
 
 
 void testUPlus(){
@@ -57,26 +58,26 @@ void testUPlus(){
 	ASSERT_EQUAL(one.value,(+one).value);
 }
 void testUMinus(){
-	struct umtest:strong<int,umtest>,ops<umtest,UMinus>{};
+	struct umtest:strong<int,umtest,UMinus>{};
 	umtest one{1};
 	ASSERT_EQUAL(-(one.value),(-one).value);
 }
 void testUInc(){
-	struct uinctest:strong<int,uinctest>,ops<uinctest,Inc>{};
+	struct uinctest:strong<int,uinctest,Inc>{};
 	uinctest var{1};
 	ASSERT_EQUAL(2,(++var).value);
 	ASSERT_EQUAL(2,(var++).value);
 	ASSERT_EQUAL(3,var.value);
 }
 void testUDec(){
-	struct udtest:strong<int,udtest>,ops<udtest,Dec>{};
+	struct udtest:strong<int,udtest,Dec>{};
 	udtest var{2};
 	ASSERT_EQUAL(1,(--var).value);
 	ASSERT_EQUAL(1,(var--).value);
 	ASSERT_EQUAL(0,var.value);
 }
 
-struct S:strong<std::string,S>,ops<S,Value,Out,Eq>{};
+struct S:strong<std::string,S,Value,Out,Eq>{};
 
 void testWithStringBase(){
 	S s{"hello"};
@@ -94,8 +95,7 @@ void testMoveWithStringBase(){
 	ASSERT_EQUAL(intptr_t(data),intptr_t(other.data()));
 }
 
-struct WaitC:strong<unsigned,WaitC>
-            ,ops<WaitC,Eq,Inc,Out>{};
+struct WaitC:strong<unsigned,WaitC,Eq,Inc,Out>{};
 static_assert(sizeof(unsigned)==sizeof(WaitC));
 void testWaitCounter(){
 	WaitC c{};
