@@ -11,13 +11,13 @@
 
 namespace test {
 using namespace pssst;
-struct Diff: strong<std::ptrdiff_t,Diff,detail__::bind2<std::ptrdiff_t,Linear>::template apply>{
+struct Diff: strong<std::ptrdiff_t,Diff,detail_::bind2<std::ptrdiff_t,Linear>::template apply>{
   constexpr Diff(std::ptrdiff_t val={}) noexcept :strong{val}{}
 };
-struct Size: create_vector_space<Size,Diff> {
+struct Size: affine_space_for<Size,Diff> {
 	constexpr Size() noexcept = default;
 	constexpr Size(Diff val)
-	:create_vector_space{val}{
+	:affine_space_for{val}{
 		if (val < Diff{0})
 			throw std::logic_error{"size is too large"};
 	}

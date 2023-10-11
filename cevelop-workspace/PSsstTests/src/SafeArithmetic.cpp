@@ -17,7 +17,7 @@ using safe_size_t = boost::safe_numerics::safe< size_t >;
 void thisIsASafeArithmeticTest() {
 	safe_size_t const sz { 0 };
 	//static_assert(std::is_signed_v<decltype(sz-1LL)>,"should be signed");
-	static_assert(pssst::detail__::is_same_v<decltype(sz-1), safe_size_t>,"staying in the domain?");
+	static_assert(pssst::detail_::is_same_v<decltype(sz-1), safe_size_t>,"staying in the domain?");
 	ASSERT_THROWS(sz-1,std::exception);
 }
 void newTestFunction(){

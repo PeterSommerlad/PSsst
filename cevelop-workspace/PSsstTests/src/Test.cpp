@@ -23,12 +23,6 @@ struct Int: strong<int,Int>,ops<Int,Order,Inc,Add,Out>{
   constexpr Int(int v={}):strong<int,Int>{v}{}
 };
 
-namespace {
-Int  dummy{42};
-
-//int &y = value_ref(dummy);
-
-}
 struct Size: strong<unsigned,Size>,ops<Size,Order,Inc,Add,Out> {
   constexpr Size(unsigned v):strong<unsigned,Size>{v}{}
 };

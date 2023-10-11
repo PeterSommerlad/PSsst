@@ -131,7 +131,7 @@ struct BoolTest {
     template<typename FROM,typename=void >
     struct BoolDoesConvertFrom:std::false_type{};
     template<typename FROM >
-    struct BoolDoesConvertFrom<FROM,detail__::void_t<decltype(Bool{std::declval<FROM>()})>>:std::true_type{};
+    struct BoolDoesConvertFrom<FROM,detail_::void_t<decltype(Bool{std::declval<FROM>()})>>:std::true_type{};
     template<typename FROM>
     static constexpr bool BoolDoesConvertFrom_v = BoolDoesConvertFrom<FROM>::value;
 
@@ -143,7 +143,7 @@ struct BoolTest {
 	template<typename WITH,typename=void >
 	struct BoolDoesNotAddWith:std::true_type{};
 	template<typename WITH >
-	struct BoolDoesNotAddWith<WITH,detail__::void_t<decltype(Bool{} + std::declval<WITH>())>>:std::false_type{};
+	struct BoolDoesNotAddWith<WITH,detail_::void_t<decltype(Bool{} + std::declval<WITH>())>>:std::false_type{};
 
 	static_assert(BoolDoesNotAddWith<int>{},"");
 	static_assert(BoolDoesNotAddWith<bool>{},"");
@@ -152,7 +152,7 @@ struct BoolTest {
 	template<typename WITH,typename=void >
 	struct boolDoesNotAddWith:std::true_type{};
 	template<typename WITH >
-	struct boolDoesNotAddWith<WITH,detail__::void_t<decltype(bool{} + std::declval<WITH>())>>:std::false_type{};
+	struct boolDoesNotAddWith<WITH,detail_::void_t<decltype(bool{} + std::declval<WITH>())>>:std::false_type{};
 
 	static_assert(not boolDoesNotAddWith<int>{},"");
 	static_assert(not boolDoesNotAddWith<bool>{},"");

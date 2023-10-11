@@ -10,9 +10,9 @@ enum class color { black, blue, green, cyan, red, magenta, yellow, white, limit_
 enum class coloroff:unsigned { black = 42, start__=black, blue, green, cyan, red, magenta, yellow, white, limit__=white };
 enum class nocolor { black, gray, white };
 
-using pssst::detail__::enum_has_limit;
-using pssst::detail__::enum_has_start;
-using pssst::detail__::wrap_increment;
+using pssst::detail_::enum_has_limit;
+using pssst::detail_::enum_has_start;
+using pssst::detail_::wrap_increment;
 
 static_assert(enum_has_limit<color>{},"");
 static_assert(not enum_has_start<color>{},"");
@@ -100,7 +100,7 @@ void testDecrementWrapSimple(){
 }
 
 void testRangeFor(){
-	using pssst::detail__::ule;
+	using pssst::detail_::ule;
 
 	int counter=0;
 

@@ -14,13 +14,13 @@ struct degrees: strong<double, degrees, Linear_d>{
 constexpr degrees(double d={}):strong{d}{}
 };
 
-struct Kelvin: create_vector_space<Kelvin,degrees> {
-	using base =  create_vector_space;
+struct Kelvin: affine_space_for<Kelvin,degrees> {
+	using base =  affine_space_for;
 	constexpr Kelvin(value_type v): base{v} {
 		if(v < value_type{} ) throw std::logic_error{"can not have negative K temperature"};
 	}
-	constexpr Kelvin(affine_space v): base{v} {
-		if(v < affine_space{value_type{}}|| v > affine_space{value_type{50}}) {
+	constexpr Kelvin(vector_space v): base{v} {
+		if(v < vector_space{value_type{}}|| v > vector_space{value_type{50}}) {
 			std::cerr << "throwing ctor\n" ;
 
 			throw std::logic_error{"can not have negative K temperature"};
@@ -29,7 +29,7 @@ struct Kelvin: create_vector_space<Kelvin,degrees> {
 	}
 };
 
-static_assert(sizeof(Kelvin) == sizeof(Kelvin::affine_space::value_type),"");
+static_assert(sizeof(Kelvin) == sizeof(Kelvin::vector_space::value_type),"");
 
 void thisIsAKelvinDegreesTest() {
 	degrees hotter{20};

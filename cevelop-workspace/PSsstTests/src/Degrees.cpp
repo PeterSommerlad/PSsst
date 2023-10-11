@@ -23,9 +23,9 @@ struct degrees:
 static_assert(sizeof(double)==sizeof(degrees),"");
 
 
-struct Kelvin:create_vector_space<Kelvin,degrees>{
+struct Kelvin:affine_space_for<Kelvin,degrees>{
 #ifndef USE_STRONG
-	using base = create_vector_space<Kelvin,degrees>;
+	using base = affine_space_for<Kelvin,degrees>;
 	explicit constexpr
 				Kelvin(degrees val) noexcept
 				:base{val}{}
@@ -46,9 +46,9 @@ struct CelsiusZero{
 	}
 };
 
-struct Celsius:create_vector_space<Celsius,degrees,CelsiusZero> {
+struct Celsius:affine_space_for<Celsius,degrees,CelsiusZero> {
 	#ifndef USE_STRONG
-	using base=create_vector_space<Celsius,degrees,CelsiusZero>;
+	using base=affine_space_for<Celsius,degrees,CelsiusZero>;
 
 	explicit constexpr
 				Celsius(degrees val) noexcept
@@ -65,11 +65,11 @@ struct Celsius:create_vector_space<Celsius,degrees,CelsiusZero> {
 static_assert(sizeof(degrees)==sizeof(Celsius),"");
 
 constexpr Celsius fromKelvin(Kelvin k) noexcept {
-	return Celsius{k.value-(Celsius::origin.value - Kelvin::origin.value)};
+	return Celsius{k.value.value-(Celsius::origin.value - Kelvin::origin.value)};
 }
 
 constexpr Kelvin fromCelsius(Celsius c)noexcept{
-	return Kelvin{c.value-(Kelvin::origin.value- Celsius::origin.value)};
+	return Kelvin{c.value.value-(Kelvin::origin.value- Celsius::origin.value)};
 }
 
 struct otherdegrees:ops<otherdegrees,Order,Out>{

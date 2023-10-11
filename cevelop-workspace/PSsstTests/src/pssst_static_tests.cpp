@@ -11,7 +11,7 @@ struct X:Y{int v;};
 template <typename U, typename = void>
 struct is_vector_space : std::false_type{};
 template <typename U>
-struct is_vector_space<U, detail__::void_t<decltype(U::origin)>> : std::true_type{};
+struct is_vector_space<U, detail_::void_t<decltype(U::origin)>> : std::true_type{};
 template<typename U>
 constexpr   bool is_vector_space_v=is_vector_space<U>::value;
 
@@ -21,20 +21,20 @@ static_assert(!is_vector_space_v<int>,"int is no absolute unit");
 
 
 
-struct bla:strong<int,bla,detail__::bind2<int,Linear>::template apply>{
+struct bla:strong<int,bla,detail_::bind2<int,Linear>::template apply>{
   constexpr bla(int v={}):strong{v}{}
 };
 static_assert(sizeof(bla)==sizeof(int),"");
 static_assert(!is_vector_space_v<bla>,"bla is absolute?");
 static_assert(0 == bla{0}.value, "check for subobject warning");
-struct blu:create_vector_space<blu,bla>{
-  constexpr blu(bla v={0}):create_vector_space{v}{}
+struct blu:affine_space_for<blu,bla>{
+  constexpr blu(bla v={0}):affine_space_for{v}{}
 };
 static_assert(sizeof(blu)==sizeof(int),"");
 static_assert(is_vector_space_v<blu>,"blu should be vector space");
 static_assert(blu::origin==blu{},"blu origin is zero");
 static_assert(blu{42}.value==bla{42}, "rel accessible");
-static_assert(detail__::is_same_v<int,underlying_value_type<bla>>,"..");
+static_assert(detail_::is_same_v<int,underlying_value_type<bla>>,"..");
 
 
 // trait: is_ebo
@@ -42,7 +42,7 @@ namespace detail{
 template <typename EBase>
 struct is_ebo_impl{
 	struct non_empty{ char x;};
-	struct test:std::conditional_t<detail__::is_class_v<EBase> && !std::is_final<EBase>::value,EBase,non_empty> {
+	struct test:std::conditional_t<detail_::is_class_v<EBase> && !std::is_final<EBase>::value,EBase,non_empty> {
 		char c;
 	};
 	static_assert(sizeof(non_empty)==sizeof(char),"structs should have optimal size");

@@ -12,7 +12,7 @@
 
 namespace pssst{
 
-namespace detail__ {
+namespace detail_ {
 template<typename T>
 constexpr bool is_class_v = std::is_class<T>::value;
 template<typename T>
@@ -39,7 +39,7 @@ constexpr std::remove_reference_t<T> membertype(T x) {
 template<typename B, template<typename...>class T>
 struct bind2{
   template<typename A, typename ...C>
-  using apply=T<A,B,C...>;
+  using apply=T<A,B>;
 };
 template <typename V, typename TAG>
 struct holder {
@@ -47,12 +47,14 @@ struct holder {
   using value_type = V;
   V value { };
 };
+template <typename U, template <typename ...> class ...BS>
+struct internal_ops:private BS<U>...{};
 
 
 }
 
 #ifndef NDEBUG
-#define pssst_assert(cond) detail__::throwing_assert((cond),#cond)
+#define pssst_assert(cond) detail_::throwing_assert((cond),#cond)
 #else
 #define pssst_assert(cond)
 #endif
@@ -60,17 +62,17 @@ struct holder {
 
 // apply multiple operator mix-ins and keep this an aggregate
 template <typename U, template <typename ...> class ...BS>
-struct ops:BS<U>...{};
+struct ops:detail_::internal_ops<U,BS...>{};
 
 // Either use this as the first base of TAG or nothing
 template <typename V, typename TAG, template<typename...>class ...OPS>
-struct strong:detail__::holder<V,TAG>,ops<TAG,OPS...> {
-  constexpr strong(V val={}) noexcept :detail__::holder<V,TAG>{val}{}
+struct strong:detail_::holder<V,TAG>,detail_::internal_ops<TAG,OPS...> {
+  constexpr strong(V val={}) noexcept :detail_::holder<V,TAG>{val}{}
 };
 
 
 template <typename T>
-using underlying_value_type = decltype(detail__::membertype(std::declval<T>()));
+using underlying_value_type = decltype(detail_::membertype(std::declval<T>()));
 
 // only supports data member in first or last class in hierarchy, not in-between.
 // the latter is much too tricky to detect.
@@ -186,7 +188,7 @@ template <typename R>
 struct BitOps {
   friend constexpr R&
   operator|=(R& l, R const &r) noexcept {
-    static_assert(detail__::is_unsigned_v<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_v<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
     l.value |= r.value;
     return l;
@@ -197,7 +199,7 @@ struct BitOps {
   }
   friend constexpr R&
   operator&=(R& l, R const &r) noexcept {
-    static_assert(detail__::is_unsigned_v<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_v<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
     l.value &= r.value;
     return l;
@@ -208,7 +210,7 @@ struct BitOps {
   }
   friend constexpr R&
   operator^=(R& l, R const &r) noexcept {
-    static_assert(detail__::is_unsigned_v<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_v<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
     l.value ^= r.value;
     return l;
@@ -220,7 +222,7 @@ struct BitOps {
   friend constexpr R
   operator~(R const &r) noexcept {
     using TO = underlying_value_type<R>;
-    static_assert(detail__::is_unsigned_v<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_v<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
     return retval<R>({static_cast<TO>(~r.value)});
   }
@@ -236,9 +238,9 @@ struct ShiftOps{
   friend constexpr R&
   operator<<=(R& l, B r)  {
     using TO = underlying_value_type<R>;
-    static_assert(detail__::is_unsigned_v<TO>,
+    static_assert(detail_::is_unsigned_v<TO>,
         "bitops are only be enabled for unsigned types");
-    static_assert(detail__::is_unsigned_v<B>,"only shift by unsigned types");
+    static_assert(detail_::is_unsigned_v<B>,"only shift by unsigned types");
     pssst_assert(r <= std::numeric_limits<TO>::digits);
     l.value = static_cast<TO>(l.value << r);
     return l;
@@ -250,9 +252,9 @@ struct ShiftOps{
   friend constexpr R&
   operator>>=(R& l, B r)  {
     using TO = std::remove_reference_t<decltype(l.value)>;
-    static_assert(detail__::is_unsigned_v<underlying_value_type<R>>,
+    static_assert(detail_::is_unsigned_v<underlying_value_type<R>>,
         "bitops are only be enabled for unsigned types");
-    static_assert(detail__::is_unsigned_v<B>,"only shift by unsigned types");
+    static_assert(detail_::is_unsigned_v<B>,"only shift by unsigned types");
     pssst_assert(r <= std::numeric_limits<underlying_value_type<R>>::digits);
     l.value = static_cast<TO>(l.value >> r);
 
@@ -368,16 +370,16 @@ using Additive=ops<V,UPlus,UMinus,Abs,Add,Sub,Inc,Dec>;
 // the static constexpr members prefix and/or suffix in the strong type
 // for more complicated things, provide your own << overload
 
-namespace detail__{
+namespace detail_{
 // detect prefix and suffix static members for output
-template <typename U, typename = detail__::void_t<>>
+template <typename U, typename = detail_::void_t<>>
 struct has_prefix : std::false_type{};
 template <typename U>
-struct has_prefix<U, detail__::void_t<decltype(U::prefix)>> : std::true_type{};
-template <typename U, typename = detail__::void_t<>>
+struct has_prefix<U, detail_::void_t<decltype(U::prefix)>> : std::true_type{};
+template <typename U, typename = detail_::void_t<>>
 struct has_suffix : std::false_type{};
 template <typename U>
-struct has_suffix<U, detail__::void_t<decltype(U::suffix)>> : std::true_type{};
+struct has_suffix<U, detail_::void_t<decltype(U::suffix)>> : std::true_type{};
 }
 template <typename U>
 class Out{
@@ -404,7 +406,7 @@ class Out{
   }
   friend std::ostream&
   operator<<(std::ostream &out, U const &r) {
-    using namespace detail__;
+    using namespace detail_;
      return print(out,r,has_prefix<U>{},has_suffix<U>{});
   }
 };
@@ -436,7 +438,7 @@ struct ScalarModulo<R,BASE,true>{
 
 // multiplicative operations with scalar, provide commutativity of *
 template <typename R, typename BASE>
-struct ScalarMultImpl : ScalarModulo<R,BASE,std::is_integral<BASE>::value && not detail__::is_same_v<std::decay_t<BASE>,bool>> {
+struct ScalarMultImpl : ScalarModulo<R,BASE,std::is_integral<BASE>::value && not detail_::is_same_v<std::decay_t<BASE>,bool>> {
   using scalar_type=BASE;
   friend constexpr R&
   operator*=(R& l, BASE const &r) noexcept {
@@ -466,7 +468,7 @@ struct ScalarMultImpl : ScalarModulo<R,BASE,std::is_integral<BASE>::value && not
 
 // scalar multiplication must know the scalar type
 template<typename TAG,typename BASE=double>
-using ScalarMult=detail__::bind2<BASE,ScalarMultImpl>;
+using ScalarMult=detail_::bind2<BASE,ScalarMultImpl>;
 // usage: strong<unsigned,TAG,ScalarMult<unsigned>::template apply,Add>
 // or for typical value types one below
 
@@ -505,101 +507,68 @@ using Linear_i= Linear<TAG,int>;
 template<typename TAG>
 using Linear_ll= Linear<TAG,long long>;
 
-// 1 dimensional vector space = Linear + origin(= ZEROFUNC{}())
-template <typename ME, typename AFFINE, typename ZEROFUNC=default_zero<AFFINE>>
-struct create_vector_space : ops<ME,Order, Out>{
-  using affine_space=AFFINE;
-  using vector_space=ME;
-  using value_type=underlying_value_type<affine_space>;
-  static_assert(detail__::is_same_v<affine_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
-  static constexpr vector_space origin {retval<affine_space>(ZEROFUNC{}())};
+// 1 dimensional affine space (Points) = Linear + origin(= ZEROFUNC{}())
+template <typename POINT, typename VECTOR_SPACE, typename ZEROFUNC=default_zero<VECTOR_SPACE>>
+struct affine_space_for : ops<POINT,Order, Out>{
+  using vector_space=VECTOR_SPACE;
+  using point=POINT;
+  using value_type=underlying_value_type<vector_space>;
+  static_assert(detail_::is_same_v<vector_space,decltype(ZEROFUNC{}())>, "origin must be in domain affine");
+  // make origin a function to prevent discrepancies in template instantiations of static inline variables across compilers
+  static constexpr auto origin {retval<vector_space>(ZEROFUNC{}())};
+//  static inline constexpr auto
+//  origin() noexcept{ return point{detail_::retval<vector_space>(ZEROFUNC{}())};}
   // the following two constructors are deliberately implicit:
-  constexpr create_vector_space(affine_space v=ZEROFUNC{}()):value{v}{}
-  constexpr create_vector_space(underlying_value_type<affine_space> v):value{retval<affine_space>(v)}{}
+  constexpr affine_space_for(vector_space v=origin()) noexcept:value{v}{}
+  constexpr affine_space_for(value_type v) noexcept:value{retval<vector_space>(v)}{}
 
-  affine_space value{ZEROFUNC{}()};
+  vector_space value;
 
   // need to redefine linear operations to take origin into account.
   // linear
-  // vs + as
-  friend constexpr vector_space&
-  operator+=(vector_space& l, affine_space const &r) noexcept(noexcept(l = vector_space{l.value + r})) {
-    l = vector_space{l.value + r};
+  // point + vector
+  friend constexpr point&
+  operator+=(point& l, vector_space const &r) noexcept(noexcept(l = point{l.value + r})) {
+    l = point{l.value + r};
     return l;
   }
-  friend constexpr vector_space
-  operator+(vector_space l, affine_space const &r) noexcept(noexcept(l += r)) {
+  friend constexpr point
+  operator+(point l, vector_space const &r) noexcept(noexcept(l += r)) {
     return l += r;
   }
-  friend constexpr vector_space
-  operator+(affine_space const & l, vector_space r) noexcept(noexcept(r += l)) {
+  friend constexpr point
+  operator+(vector_space const & l, point r) noexcept(noexcept(r += l)) {
     return r += l;
   }
-  // vs - as // caution check if before origin is allowed overflow check
-  friend constexpr vector_space&
-  operator-=(vector_space& l, affine_space const &r) noexcept(noexcept(l = vector_space{l.value - r})) {
-    l = vector_space{l.value - r};
+  // point - vector // caution check if before origin is allowed overflow check
+  friend constexpr point&
+  operator-=(point& l, vector_space const &r) noexcept(noexcept(l = point{l.value - r})) {
+    l = point{l.value - r};
     return l;
   }
-  friend constexpr vector_space
-  operator-(vector_space l, affine_space const &r) noexcept(noexcept(l -= r)) {
+  friend constexpr point
+  operator-(point l, vector_space const &r) noexcept(noexcept(l -= r)) {
     return l -= r;
   }
-  // vs - vs = as
-  friend constexpr affine_space
-  operator-(vector_space const &l,vector_space const &r) noexcept(noexcept(l.value - r.value)) {
+  // point - point = vector
+  friend constexpr vector_space
+  operator-(point const &l,point const &r) noexcept(noexcept(l.value - r.value)) {
     return l.value - r.value;
   }
-  // vs + vs, vs * scalar
-  friend constexpr vector_space&
-  operator+=(vector_space &l, vector_space const &r) noexcept(noexcept(l = origin + ((l - origin) + (r - origin)))) {
-    l = origin + ((l - origin) + (r - origin));
-    return l;
-  }
-  friend constexpr vector_space
-  operator+(vector_space l, vector_space const &r) noexcept(noexcept(l+=r)) {
-    l += r;
-    return l;
-  }
-  friend constexpr vector_space&
-  operator *=(vector_space &l, value_type r) noexcept(noexcept(l = origin + (l - origin) * r)) {
-    l = origin + (l - origin) * r ;
-    return l;
-  }
-  friend constexpr vector_space
-  operator*(vector_space l, value_type const &r) noexcept(noexcept(l *= r)) {
-    return l *= r;
-  }
-  friend constexpr vector_space
-  operator*(value_type const & l, vector_space r) noexcept(noexcept(r *= l)) {
-    return r *= l;
-  }
-  friend constexpr vector_space&
-  operator/=(vector_space& l, value_type const &r) {
-    // need to check if r is 0 and handle error
-    pssst_assert(r != decltype(r){});
-    l = vector_space{ l.value / r };
-    return l;
-  }
-  friend constexpr vector_space
-  operator/(vector_space l, value_type const &r)  {
-    return l /= r;
-  }
 };
-template <typename ME, typename AFFINE, typename ZEROFUNC>
- constexpr typename create_vector_space<ME,AFFINE,ZEROFUNC>::vector_space create_vector_space<ME,AFFINE,ZEROFUNC>::origin;
 
 
-// must be vector spaces from same affine space, e.g. celsius to kelvin
-// TODO: conversion with scaling factor, e.g. fahrenheit to celsius
+// must be affine spaces from same vector space, e.g. celsius to kelvin
+// NOTODO: conversion with scaling factor, e.g. fahrenheit to celsius -> NO, that is Units!
 template<typename TO, typename FROM>
 constexpr TO convertTo(FROM from) noexcept{
-  static_assert(detail__::is_same_v<
-      typename FROM::affine_space
-      ,typename TO::affine_space>,"affine spaces must match for conversion");
-  return retval<TO>((from.value-(TO::origin.value-FROM::origin.value)));
+  static_assert(detail_::is_same_v<
+      typename FROM::vector_space
+      ,typename TO::vector_space>,"vector space must match for affine spaces conversion");
+  using vs = typename FROM::vector_space;
+  return retval<TO>((from.value-vs{TO::origin.value-FROM::origin.value}));
+  //return retval<TO>((from.value-(value(TO::origin)-value(FROM::origin))));
 }
-
 } // pssst
 
 
